@@ -19,6 +19,81 @@ async function connectToMongo() {
   return db
 }
 
+// Helper to calculate collaboration match score
+function calculateMatchScore(user1, user2) {
+  let score = 0
+  const reasons = []
+
+  // Niche overlap (+40 points max)
+  const nicheOverlap = (user1.niches || []).filter(n => (user2.niches || []).includes(n))
+  if (nicheOverlap.length > 0) {
+    score += Math.min(nicheOverlap.length * 20, 40)
+    reasons.push(`Shared niches: ${nicheOverlap.join(', ')}`)
+  }
+
+  // Game overlap (+15 points max)
+  const gameOverlap = (user1.games || []).filter(g => (user2.games || []).includes(g))
+  if (gameOverlap.length > 0) {
+    score += Math.min(gameOverlap.length * 8, 15)
+    reasons.push(`Same games: ${gameOverlap.join(', ')}`)
+  }
+
+  // Platform overlap (+10 points max)
+  const platformOverlap = (user1.platforms || []).filter(p => (user2.platforms || []).includes(p))
+  if (platformOverlap.length > 0) {
+    score += Math.min(platformOverlap.length * 5, 10)
+    reasons.push(`Shared platforms: ${platformOverlap.join(', ')}`)
+  }
+
+  // Same city (+10 points)
+  if (user1.city && user2.city && user1.city.toLowerCase() === user2.city.toLowerCase()) {
+    score += 10
+    reasons.push(`Same city: ${user1.city}`)
+  }
+
+  // Schedule overlap (+25 points max)
+  if (user1.hasSchedule && user2.hasSchedule && user1.schedule && user2.schedule) {
+    const overlappingDays = []
+    Object.keys(user1.schedule).forEach(day => {
+      if (user2.schedule[day]) {
+        const commonTimes = (user1.schedule[day] || []).filter(time => 
+          (user2.schedule[day] || []).includes(time)
+        )
+        if (commonTimes.length > 0) {
+          overlappingDays.push(day)
+        }
+      }
+    })
+    if (overlappingDays.length > 0) {
+      score += Math.min(overlappingDays.length * 5, 25)
+      reasons.push(`Available same times: ${overlappingDays.join(', ')}`)
+    }
+  }
+
+  // Time zone compatibility (+5 points)
+  if (user1.timeZone && user2.timeZone) {
+    // Simple time zone compatibility check
+    const tz1 = user1.timeZone.toLowerCase()
+    const tz2 = user2.timeZone.toLowerCase()
+    if (tz1 === tz2) {
+      score += 5
+      reasons.push('Same time zone')
+    } else if (
+      (tz1.includes('america') && tz2.includes('america')) ||
+      (tz1.includes('europe') && tz2.includes('europe')) ||
+      (tz1.includes('asia') && tz2.includes('asia'))
+    ) {
+      score += 3
+      reasons.push('Compatible time zones')
+    }
+  }
+
+  return {
+    score: Math.min(score, 100), // Cap at 100%
+    reasons
+  }
+}
+
 // Helper function to handle CORS
 function handleCORS(response) {
   response.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGINS || '*')
