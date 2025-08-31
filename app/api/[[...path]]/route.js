@@ -113,7 +113,19 @@ async function handleRoute(request, { params }) {
     
     // Sign up - POST /api/auth/signup
     if (route === '/auth/signup' && method === 'POST') {
-      const { email, password, displayName } = await request.json()
+      const { 
+        email, 
+        password, 
+        displayName, 
+        platforms = [], 
+        niches = [], 
+        games = [], 
+        city = '', 
+        timeZone = '', 
+        hasSchedule = false, 
+        schedule = {}, 
+        bio = '' 
+      } = await request.json()
       
       if (!email || !password || !displayName) {
         return handleCORS(NextResponse.json(
@@ -140,9 +152,15 @@ async function handleRoute(request, { params }) {
         email,
         password: hashedPassword,
         displayName,
+        platforms,
+        niches,
+        games,
+        city,
+        timeZone,
+        hasSchedule,
+        schedule,
+        bio,
         createdAt: new Date(),
-        platforms: [],
-        niches: [],
         credits: 0
       }
 
