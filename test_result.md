@@ -120,6 +120,21 @@ backend:
           agent: "testing"
           comment: "✅ PASSED - User signup working correctly. Creates user with hashed password, returns JWT token and user data without password. Tested with unique email/password/displayName."
 
+  - task: "Authentication - Enhanced User Signup"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "New collaboration finder functionality - Enhanced signup with extended profile fields"
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Enhanced user signup working correctly. Successfully stores platforms, niches, games, city, timeZone, hasSchedule, schedule, and bio fields. All extended profile data properly saved and returned."
+
   - task: "Authentication - User Login"
     implemented: true
     working: true
@@ -239,6 +254,36 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ PASSED - Credits system working correctly. Returns user credit balance. Verified credit calculation: like=1, comment=2, share=3 credits. Total earned 6 credits as expected."
+
+  - task: "Collaboration Matching Algorithm"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "New collaboration finder functionality - GET /api/collaborations/matches/{userId} endpoint with sophisticated matching algorithm"
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Collaboration matching algorithm working perfectly. Correctly calculates match scores based on niche overlap (+40 max), game overlap (+15 max), platform overlap (+10 max), same city (+10), schedule overlap (+25 max), and time zone compatibility (+5). Tested with 3 users: User B scored 48 points vs User C with 3 points, demonstrating proper scoring logic."
+
+  - task: "Collaboration Invite System"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "New collaboration finder functionality - POST /api/collaborations/invite endpoint for sending collaboration requests"
+        - working: true
+          agent: "testing"
+          comment: "✅ PASSED - Collaboration invite system working correctly. Successfully creates invite with proper structure including fromUserId, toUserId, message, and status fields. Invite stored with 'pending' status and unique ID generated."
 
 frontend:
   - task: "Frontend UI Components"
