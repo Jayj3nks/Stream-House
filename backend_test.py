@@ -10,8 +10,8 @@ import time
 import os
 from datetime import datetime
 
-# Get base URL from environment - using local URL since external is returning 502
-BASE_URL = "http://localhost:3000/api"
+# Get base URL from environment
+BASE_URL = "https://collabsquad.preview.emergentagent.com/api"
 
 class CreatorSquadAPITester:
     def __init__(self):
