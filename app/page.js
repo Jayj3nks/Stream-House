@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Heart, MessageCircle, Share, Users, Target, Trophy, Calendar, Bell } from 'lucide-react'
+import { Plus, Heart, MessageCircle, Share, Users, Target, Trophy, Calendar, Bell, Search } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 
