@@ -376,6 +376,14 @@ export default function App() {
               <Trophy className="h-3 w-3" />
               <span>{userCredits} credits</span>
             </Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/collaborations'}
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Find Collabs
+            </Button>
             <Avatar>
               <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
