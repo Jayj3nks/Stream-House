@@ -122,6 +122,70 @@ class CreatorSquadAPITester:
                 response.json() if response else None
             )
 
+    def test_enhanced_user_signup(self):
+        """Test enhanced user signup with collaboration profile fields"""
+        print("\n" + "="*60)
+        print("TESTING ENHANCED USER SIGNUP - COLLABORATION PROFILE")
+        print("="*60)
+        
+        # Generate unique test data with extended profile
+        timestamp = int(time.time())
+        test_data = {
+            "email": f"collab_user_{timestamp}@example.com",
+            "password": "CollabPassword123!",
+            "displayName": f"Collab User {timestamp}",
+            "platforms": ["YouTube", "TikTok", "Instagram"],
+            "niches": ["Gaming", "Fitness"],
+            "games": ["Fortnite", "Minecraft"],
+            "city": "Los Angeles",
+            "timeZone": "America/Los_Angeles",
+            "hasSchedule": True,
+            "schedule": {
+                "monday": ["10:00", "14:00", "18:00"],
+                "tuesday": ["10:00", "14:00"],
+                "wednesday": ["10:00", "18:00"]
+            },
+            "bio": "Content creator focused on gaming and fitness collaborations"
+        }
+        
+        response = self.make_request('POST', '/auth/signup', test_data)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'token' in data and 'user' in data:
+                user = data['user']
+                # Verify all extended fields are stored
+                expected_fields = ['platforms', 'niches', 'games', 'city', 'timeZone', 'hasSchedule', 'schedule', 'bio']
+                missing_fields = [field for field in expected_fields if field not in user]
+                
+                if not missing_fields:
+                    return self.log_test(
+                        "Enhanced User Signup", 
+                        True, 
+                        f"Enhanced user created successfully. Platforms: {user['platforms']}, Niches: {user['niches']}, Games: {user['games']}"
+                    )
+                else:
+                    return self.log_test(
+                        "Enhanced User Signup", 
+                        False, 
+                        f"Missing extended profile fields: {missing_fields}", 
+                        user
+                    )
+            else:
+                return self.log_test(
+                    "Enhanced User Signup", 
+                    False, 
+                    "Response missing token or user data", 
+                    data
+                )
+        else:
+            return self.log_test(
+                "Enhanced User Signup", 
+                False, 
+                f"Enhanced signup failed. Status: {response.status_code if response else 'No response'}", 
+                response.json() if response else None
+            )
+
     def test_user_login(self):
         """Test user login endpoint"""
         print("\n" + "="*60)
