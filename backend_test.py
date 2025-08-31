@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 
 # Get base URL from environment
-BASE_URL = "https://collabsquad.preview.emergentagent.com/api"
+BASE_URL = "http://localhost:3000/api"
 
 class CreatorSquadAPITester:
     def __init__(self):
