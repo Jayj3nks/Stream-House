@@ -338,6 +338,17 @@ export default function App() {
               >
                 {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
               </Button>
+              {!isSignUp && (
+                <div className="mt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.href = '/signup'}
+                    className="w-full"
+                  >
+                    Create Detailed Profile
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
