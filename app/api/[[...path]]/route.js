@@ -398,6 +398,79 @@ async function handleRoute(request, { params }) {
       }))
     }
 
+    // COLLABORATION ROUTES
+
+    // Get collaboration matches - GET /api/collaborations/matches/{userId}
+    if (route.startsWith('/collaborations/matches/') && method === 'GET') {
+      const userId = route.split('/')[3]
+      
+      // Get current user
+      const currentUser = await db.collection('users').findOne({ id: userId })
+      if (!currentUser) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Get all other users for matching
+      const allUsers = await db.collection('users')
+        .find({ id: { $ne: userId } })
+        .toArray()
+
+      // Calculate match scores
+      const matches = allUsers.map(user => {
+        const matchData = calculateMatchScore(currentUser, user)
+        return {
+          id: user.id,
+          displayName: user.displayName,
+          bio: user.bio,
+          platforms: user.platforms || [],
+          niches: user.niches || [],
+          games: user.games || [],
+          city: user.city,
+          timeZone: user.timeZone,
+          hasSchedule: user.hasSchedule,
+          schedule: user.schedule || {},
+          matchScore: matchData.score,
+          matchReasons: matchData.reasons
+        }
+      })
+
+      // Sort by match score and return top matches
+      const sortedMatches = matches
+        .filter(match => match.matchScore > 0)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 20)
+
+      return handleCORS(NextResponse.json(sortedMatches))
+    }
+
+    // Send collaboration invite - POST /api/collaborations/invite
+    if (route === '/collaborations/invite' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { fromUserId, toUserId, message } = await request.json()
+      
+      if (!fromUserId || !toUserId || !message) {
+        return handleCORS(NextResponse.json(
+          { error: "From user ID, to user ID, and message are required" }, 
+          { status: 400 }
+        ))
+      }
+
+      const invite = {
+        id: uuidv4(),
+        fromUserId,
+        toUserId,
+        message,
+        status: 'pending',
+        createdAt: new Date()
+      }
+
+      await db.collection('collaboration_invites').insertOne(invite)
+      return handleCORS(NextResponse.json(invite))
+    }
+
     // Route not found
     return handleCORS(NextResponse.json(
       { error: `Route ${route} not found` }, 
