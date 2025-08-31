@@ -773,6 +773,7 @@ class CreatorSquadAPITester:
         # Run all tests in sequence
         test_results.append(self.test_api_root())
         test_results.append(self.test_user_signup())
+        test_results.append(self.test_enhanced_user_signup())
         test_results.append(self.test_user_login())
         test_results.append(self.test_get_current_user())
         test_results.append(self.test_create_squad())
@@ -781,6 +782,8 @@ class CreatorSquadAPITester:
         test_results.append(self.test_get_squad_posts())
         test_results.append(self.test_create_engagement())
         test_results.append(self.test_get_user_credits())
+        test_results.append(self.test_collaboration_matching())
+        test_results.append(self.test_collaboration_invite())
         
         # Summary
         print("\n" + "="*80)
