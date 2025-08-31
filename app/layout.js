@@ -1,15 +1,23 @@
 import './globals.css'
+import { ThemeProvider } from "next-themes"
 
 export const metadata = {
-  title: 'Next.js MongoDB Template',
-  description: 'A simple template with App Router, MongoDB, and shadcn/ui',
+  title: 'CreatorSquad - Creator Support & Collab Platform',
+  description: 'Help creators organize into squads, boost each other\'s posts, and find collaborations',
 }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
