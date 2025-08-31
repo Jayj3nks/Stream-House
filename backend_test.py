@@ -531,6 +531,236 @@ class CreatorSquadAPITester:
                 response.json() if response else None
             )
 
+    def test_collaboration_matching(self):
+        """Test collaboration matching algorithm"""
+        print("\n" + "="*60)
+        print("TESTING COLLABORATION MATCHING ALGORITHM")
+        print("="*60)
+        
+        # First create test users with different profiles
+        timestamp = int(time.time())
+        
+        # User A: Gaming + Fitness, plays Fortnite, in Los Angeles, has schedule
+        user_a_data = {
+            "email": f"user_a_{timestamp}@example.com",
+            "password": "Password123!",
+            "displayName": f"Gaming Creator A {timestamp}",
+            "platforms": ["YouTube", "Twitch"],
+            "niches": ["Gaming", "Fitness"],
+            "games": ["Fortnite"],
+            "city": "Los Angeles",
+            "timeZone": "America/Los_Angeles",
+            "hasSchedule": True,
+            "schedule": {
+                "monday": ["10:00", "14:00"],
+                "tuesday": ["10:00", "14:00"]
+            },
+            "bio": "Gaming and fitness content creator"
+        }
+        
+        # User B: Gaming + Music, plays Fortnite + Minecraft, in Los Angeles, no schedule
+        user_b_data = {
+            "email": f"user_b_{timestamp}@example.com",
+            "password": "Password123!",
+            "displayName": f"Gaming Creator B {timestamp}",
+            "platforms": ["YouTube", "TikTok"],
+            "niches": ["Gaming", "Music"],
+            "games": ["Fortnite", "Minecraft"],
+            "city": "Los Angeles",
+            "timeZone": "America/Los_Angeles",
+            "hasSchedule": False,
+            "schedule": {},
+            "bio": "Gaming and music content creator"
+        }
+        
+        # User C: Beauty + Lifestyle, no games, in New York, different schedule
+        user_c_data = {
+            "email": f"user_c_{timestamp}@example.com",
+            "password": "Password123!",
+            "displayName": f"Beauty Creator C {timestamp}",
+            "platforms": ["Instagram", "TikTok"],
+            "niches": ["Beauty", "Lifestyle"],
+            "games": [],
+            "city": "New York",
+            "timeZone": "America/New_York",
+            "hasSchedule": True,
+            "schedule": {
+                "wednesday": ["16:00", "20:00"],
+                "thursday": ["16:00", "20:00"]
+            },
+            "bio": "Beauty and lifestyle content creator"
+        }
+        
+        # Create all test users
+        users_created = []
+        for user_data in [user_a_data, user_b_data, user_c_data]:
+            response = self.make_request('POST', '/auth/signup', user_data)
+            if response and response.status_code == 200:
+                data = response.json()
+                users_created.append({
+                    'id': data['user']['id'],
+                    'name': data['user']['displayName'],
+                    'data': user_data
+                })
+            else:
+                return self.log_test(
+                    "Collaboration Matching (Setup)", 
+                    False, 
+                    f"Failed to create test user: {user_data['displayName']}"
+                )
+        
+        if len(users_created) != 3:
+            return self.log_test(
+                "Collaboration Matching (Setup)", 
+                False, 
+                f"Only created {len(users_created)} out of 3 test users"
+            )
+        
+        # Test matching for User A
+        user_a_id = users_created[0]['id']
+        response = self.make_request('GET', f'/collaborations/matches/{user_a_id}')
+        
+        if response and response.status_code == 200:
+            matches = response.json()
+            if isinstance(matches, list) and len(matches) >= 2:
+                # Find User B and User C in matches
+                user_b_match = next((m for m in matches if users_created[1]['name'] in m['displayName']), None)
+                user_c_match = next((m for m in matches if users_created[2]['name'] in m['displayName']), None)
+                
+                if user_b_match and user_c_match:
+                    # Verify User B has higher score than User C (shared location, niche, games)
+                    if user_b_match['matchScore'] > user_c_match['matchScore']:
+                        return self.log_test(
+                            "Collaboration Matching", 
+                            True, 
+                            f"Matching algorithm working correctly. User B score: {user_b_match['matchScore']}, User C score: {user_c_match['matchScore']}. Reasons for B: {user_b_match['matchReasons']}"
+                        )
+                    else:
+                        return self.log_test(
+                            "Collaboration Matching", 
+                            False, 
+                            f"Incorrect scoring. User B score: {user_b_match['matchScore']}, User C score: {user_c_match['matchScore']}"
+                        )
+                else:
+                    return self.log_test(
+                        "Collaboration Matching", 
+                        False, 
+                        f"Could not find expected users in matches. Found {len(matches)} matches"
+                    )
+            else:
+                return self.log_test(
+                    "Collaboration Matching", 
+                    False, 
+                    f"Expected at least 2 matches, got {len(matches) if isinstance(matches, list) else 'invalid response'}"
+                )
+        else:
+            return self.log_test(
+                "Collaboration Matching", 
+                False, 
+                f"Failed to get matches. Status: {response.status_code if response else 'No response'}", 
+                response.json() if response else None
+            )
+
+    def test_collaboration_invite(self):
+        """Test collaboration invite functionality"""
+        print("\n" + "="*60)
+        print("TESTING COLLABORATION INVITE SYSTEM")
+        print("="*60)
+        
+        # Create two test users for invite testing
+        timestamp = int(time.time())
+        
+        # Create sender user
+        sender_data = {
+            "email": f"sender_{timestamp}@example.com",
+            "password": "Password123!",
+            "displayName": f"Sender User {timestamp}",
+            "platforms": ["YouTube"],
+            "niches": ["Gaming"],
+            "bio": "Looking for collaboration partners"
+        }
+        
+        sender_response = self.make_request('POST', '/auth/signup', sender_data)
+        if not sender_response or sender_response.status_code != 200:
+            return self.log_test(
+                "Collaboration Invite (Setup)", 
+                False, 
+                "Failed to create sender user"
+            )
+        
+        sender_user = sender_response.json()['user']
+        sender_token = sender_response.json()['token']
+        
+        # Create receiver user
+        receiver_data = {
+            "email": f"receiver_{timestamp}@example.com",
+            "password": "Password123!",
+            "displayName": f"Receiver User {timestamp}",
+            "platforms": ["TikTok"],
+            "niches": ["Gaming"],
+            "bio": "Open to collaborations"
+        }
+        
+        receiver_response = self.make_request('POST', '/auth/signup', receiver_data)
+        if not receiver_response or receiver_response.status_code != 200:
+            return self.log_test(
+                "Collaboration Invite (Setup)", 
+                False, 
+                "Failed to create receiver user"
+            )
+        
+        receiver_user = receiver_response.json()['user']
+        
+        # Test sending collaboration invite
+        invite_data = {
+            "fromUserId": sender_user['id'],
+            "toUserId": receiver_user['id'],
+            "message": "Hey! I saw your gaming content and would love to collaborate on a project. Let's create something amazing together!"
+        }
+        
+        # Set auth token for sender
+        original_token = self.auth_token
+        self.auth_token = sender_token
+        
+        response = self.make_request('POST', '/collaborations/invite', invite_data, auth_required=True)
+        
+        # Restore original token
+        self.auth_token = original_token
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'id' in data and 'fromUserId' in data and 'toUserId' in data and 'message' in data and 'status' in data:
+                if (data['fromUserId'] == sender_user['id'] and 
+                    data['toUserId'] == receiver_user['id'] and 
+                    data['status'] == 'pending' and 
+                    data['message'] == invite_data['message']):
+                    return self.log_test(
+                        "Collaboration Invite", 
+                        True, 
+                        f"Invite sent successfully. ID: {data['id']}, Status: {data['status']}"
+                    )
+                else:
+                    return self.log_test(
+                        "Collaboration Invite", 
+                        False, 
+                        "Invite data mismatch", 
+                        data
+                    )
+            else:
+                return self.log_test(
+                    "Collaboration Invite", 
+                    False, 
+                    "Response missing required invite fields", 
+                    data
+                )
+        else:
+            return self.log_test(
+                "Collaboration Invite", 
+                False, 
+                f"Failed to send invite. Status: {response.status_code if response else 'No response'}", 
+                response.json() if response else None
+            )
+
     def run_all_tests(self):
         """Run all backend API tests"""
         print("\n" + "🚀 STARTING CREATORSQUAD BACKEND API TESTS")
