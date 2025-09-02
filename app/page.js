@@ -28,8 +28,6 @@ export default function App() {
   // Auth state
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [displayName, setDisplayName] = useState('')
 
   // New post state
   const [newPostUrl, setNewPostUrl] = useState('')
