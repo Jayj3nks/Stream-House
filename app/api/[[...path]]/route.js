@@ -763,8 +763,16 @@ async function handleRoute(request, { params }) {
         )
       }
 
-      // Redirect to canonical URL
-      return Response.redirect(post.canonicalUrl, 302)
+      // Redirect to canonical URL (with fallback)
+      const redirectUrl = post.canonicalUrl || post.originalUrl || post.url
+      if (!redirectUrl) {
+        return handleCORS(NextResponse.json(
+          { error: "No valid URL to redirect to" }, 
+          { status: 400 }
+        ))
+      }
+      
+      return Response.redirect(redirectUrl, 302)
     }
 
     // CLIPS SYSTEM
