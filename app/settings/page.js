@@ -15,6 +15,7 @@ import { Shield, User, Mail, Key, ArrowLeft, Upload, Camera } from 'lucide-react
 export default function SettingsPage() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('profile')
   const { toast } = useToast()
 
   // Profile picture upload
@@ -47,14 +48,25 @@ export default function SettingsPage() {
   const [emailStep, setEmailStep] = useState(1) // 1: new email + password, 2: confirmation code
 
   useEffect(() => {
+    // Handle hash routing
+    const hash = window.location.hash.slice(1)
+    if (['profile', 'account', 'security', 'privacy'].includes(hash)) {
+      setActiveTab(hash)
+    }
+
     loadUserData()
   }, [])
+
+  // Update URL hash when tab changes
+  useEffect(() => {
+    window.location.hash = activeTab
+  }, [activeTab])
 
   const loadUserData = async () => {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
-        window.location.href = '/'
+        window.location.href = '/?next=/settings'
         return
       }
 
@@ -66,12 +78,24 @@ export default function SettingsPage() {
         setUser(userData)
         setUsernameForm({ ...usernameForm, newUsername: userData.displayName })
         setEmailForm({ ...emailForm, newEmail: userData.email })
-        setAppearInRoommateSearch(userData.appearInRoommateSearch || false)
+        setAppearInRoommateSearch(userData.roommateSearchVisible || false)
+      } else if (response.status === 401) {
+        // Redirect to login with next parameter
+        window.location.href = '/login?next=/settings'
       } else {
-        window.location.href = '/'
+        toast({
+          title: "Error",
+          description: "Failed to load user data.",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('Error loading user data:', error)
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -89,11 +113,11 @@ export default function SettingsPage() {
       return
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please select an image smaller than 5MB.",
+        description: "Please select an image smaller than 2MB.",
         variant: "destructive"
       })
       return
@@ -115,7 +139,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setUser(prev => ({ ...prev, profilePictureUrl: data.url }))
+        setUser(prev => ({ ...prev, avatarUrl: data.url }))
         toast({
           title: "Profile picture updated",
           description: "Your new profile picture has been saved."
@@ -153,7 +177,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         setAppearInRoommateSearch(enabled)
-        setUser(prev => ({ ...prev, appearInRoommateSearch: enabled }))
+        setUser(prev => ({ ...prev, roommateSearchVisible: enabled }))
         toast({
           title: "Settings updated",
           description: enabled ? "You'll now appear in roommate search." : "You're now hidden from roommate search."
@@ -284,7 +308,7 @@ export default function SettingsPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setUser({ ...user, displayName: usernameForm.newUsername })
+        setUser(prev => ({ ...prev, displayName: data.displayName, username: data.username }))
         setUsernameForm({ ...usernameForm, password: '' })
         toast({
           title: "Username updated",
@@ -350,7 +374,7 @@ export default function SettingsPage() {
             description: `Check ${emailForm.newEmail} for the confirmation code.`
           })
         } else if (step === 2) {
-          setUser({ ...user, email: emailForm.newEmail })
+          setUser(prev => ({ ...prev, email: emailForm.newEmail }))
           setEmailForm({
             newEmail: emailForm.newEmail,
             password: '',
@@ -407,7 +431,7 @@ export default function SettingsPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
@@ -425,13 +449,13 @@ export default function SettingsPage() {
                   <span>Profile Picture</span>
                 </CardTitle>
                 <CardDescription>
-                  Update your profile picture (max 5MB)
+                  Update your profile picture (max 2MB, PNG/JPEG/WebP)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <Avatar className="w-20 h-20">
-                    <AvatarImage src={user.profilePictureUrl} />
+                    <AvatarImage src={user.avatarUrl} />
                     <AvatarFallback className="text-2xl">
                       {user.displayName?.[0]?.toUpperCase()}
                     </AvatarFallback>
@@ -448,12 +472,12 @@ export default function SettingsPage() {
                     <Input
                       id="avatar-upload"
                       type="file"
-                      accept="image/*"
+                      accept="image/png,image/jpeg,image/webp"
                       onChange={handleProfilePictureUpload}
                       className="hidden"
                     />
                     <p className="text-xs text-muted-foreground">
-                      JPG, PNG, GIF up to 5MB
+                      PNG, JPEG, WebP up to 2MB
                     </p>
                   </div>
                 </div>
@@ -508,7 +532,7 @@ export default function SettingsPage() {
                   <span>Email Address</span>
                 </CardTitle>
                 <CardDescription>
-                  Update your email address for account notifications
+                  Update your email address (requires confirmation)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -587,7 +611,7 @@ export default function SettingsPage() {
                   <span>Change Password</span>
                 </CardTitle>
                 <CardDescription>
-                  Update your password to keep your account secure
+                  Update your password (requires email confirmation)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
