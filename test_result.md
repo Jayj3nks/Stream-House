@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "CreatorSquad v2 - A platform for content creators with streamlined engagement, clips, and collaboration features"
+user_problem_statement: "Streamer House - Complete frontend rebrand and new features implementation including profile pictures, kick votes, message board, roommate finder, and enhanced post management"
 
 backend:
   - task: "New Post System - Create Post with URL Metadata"
