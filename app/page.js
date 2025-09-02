@@ -229,9 +229,10 @@ export default function App() {
     }
   }
 
-  const handleEngagement = async (postId, type) => {
+  const handleEngagement = async (postId, type, postUrl, platform) => {
     try {
-      const response = await fetch('/api/engagements', {
+      // First track the click
+      const clickResponse = await fetch('/api/engagements/click', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -240,36 +241,89 @@ export default function App() {
         body: JSON.stringify({
           postId,
           userId: user.id,
-          type
+          type,
+          redirectUrl: postUrl
+        })
+      })
+
+      if (clickResponse.ok) {
+        // Open the native platform post
+        window.open(postUrl, '_blank')
+        
+        // Show verification dialog after a delay
+        setTimeout(() => {
+          const userConfirmed = window.confirm(
+            `Did you successfully ${type === 'like' ? 'like' : type === 'comment' ? 'comment on' : 'share'} this ${platform} post?\n\nClick OK to earn credits, or Cancel if you didn't engage.`
+          )
+          
+          if (userConfirmed) {
+            // Verify engagement and award credits
+            verifyEngagement(postId, type, postUrl)
+          }
+        }, 3000) // 3 second delay to allow platform interaction
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to track engagement.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const verifyEngagement = async (postId, type, postUrl) => {
+    try {
+      const response = await fetch('/api/engagements/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          postId,
+          userId: user.id,
+          type,
+          verificationData: { url: postUrl, timestamp: new Date().toISOString() }
         })
       })
 
       if (response.ok) {
-        const engagement = await response.json()
+        const data = await response.json()
+        
         // Update posts with new engagement
         setPosts(prev => prev.map(post => {
           if (post.id === postId) {
             return {
               ...post,
-              engagements: [...(post.engagements || []), engagement]
+              engagements: [...(post.engagements || []), data.engagement]
             }
           }
           return post
         }))
 
         // Update credits
-        const creditsEarned = type === 'like' ? 1 : type === 'comment' ? 2 : 3
-        setUserCredits(prev => prev + creditsEarned)
+        setUserCredits(prev => prev + data.creditsEarned)
 
         toast({
-          title: `+${creditsEarned} credits!`,
-          description: `Thanks for ${type === 'like' ? 'liking' : type === 'comment' ? 'commenting' : 'sharing'}!`
+          title: `+${data.creditsEarned} credits earned!`,
+          description: `Thanks for ${type === 'like' ? 'liking' : type === 'comment' ? 'commenting on' : 'sharing'} this ${post.platform} post!`
         })
+      } else {
+        const errorData = await response.json()
+        if (errorData.error.includes('already earned')) {
+          toast({
+            title: "Already earned credits",
+            description: "You've already earned credits for this engagement today.",
+            variant: "default"
+          })
+        } else {
+          throw new Error(errorData.error)
+        }
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to record engagement.",
+        title: "Verification failed",
+        description: "Could not verify your engagement. No credits awarded.",
         variant: "destructive"
       })
     }
