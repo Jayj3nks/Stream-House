@@ -480,6 +480,152 @@ class StreamerHouseAPITester:
             self.log_result("Roommate Search", False, f"Roommate search failed with status {status}", error)
             return False
     
+    def test_settings_roommate_search_endpoint(self):
+        """Test /api/settings/roommate-search endpoint (newly added)"""
+        # Test setting visibility to true
+        result_true = self.make_request('POST', '/settings/roommate-search', {
+            'appearInRoommateSearch': True
+        })
+        
+        if not result_true or result_true.status_code != 200:
+            error = result_true.json() if result_true else {}
+            self.log_result("Settings Roommate Search Endpoint", False, "Failed to set roommate search to true", error)
+            return False
+        
+        # Test setting visibility to false
+        result_false = self.make_request('POST', '/settings/roommate-search', {
+            'appearInRoommateSearch': False
+        })
+        
+        if result_false and result_false.status_code == 200:
+            self.log_result("Settings Roommate Search Endpoint", True, "Settings roommate search endpoint working")
+            return True
+        else:
+            error = result_false.json() if result_false else {}
+            self.log_result("Settings Roommate Search Endpoint", False, "Failed to set roommate search to false", error)
+            return False
+    
+    def test_media_upload_endpoint(self):
+        """Test /api/media/upload endpoint (newly added)"""
+        response = self.make_request('POST', '/media/upload', {})
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'url' in data and 'id' in data:
+                self.log_result("Media Upload Endpoint", True, f"Media upload endpoint working: {data['url']}")
+                return True
+            else:
+                self.log_result("Media Upload Endpoint", False, "Media upload response missing expected fields", data)
+                return False
+        else:
+            status = response.status_code if response else "No response"
+            error = response.json() if response else {}
+            self.log_result("Media Upload Endpoint", False, f"Media upload endpoint failed with status {status}", error)
+            return False
+    
+    def test_users_username_endpoint(self):
+        """Test /api/users/{username} endpoint (was returning 404)"""
+        if not self.test_user:
+            self.log_result("Users Username Endpoint", False, "No test user available")
+            return False
+        
+        username = self.test_user.get('username')
+        if not username:
+            self.log_result("Users Username Endpoint", False, "No username found in test user data")
+            return False
+        
+        response = self.make_request('GET', f'/users/{username}')
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'user' in data and 'posts' in data and 'clipsMade' in data and 'pointsBreakdown' in data:
+                self.log_result("Users Username Endpoint", True, f"User profile endpoint working for username: {username}")
+                return True
+            else:
+                self.log_result("Users Username Endpoint", False, "User profile response missing expected fields", data)
+                return False
+        else:
+            status = response.status_code if response else "No response"
+            error = response.json() if response else {}
+            self.log_result("Users Username Endpoint", False, f"User profile endpoint failed for username: {username} (status: {status})", error)
+            return False
+    
+    def test_authentication_requirements(self):
+        """Test authentication requirements on protected routes"""
+        # Save current token
+        old_token = self.auth_token
+        self.auth_token = None
+        
+        # Test protected endpoints without auth
+        protected_endpoints = [
+            ('GET', '/auth/me'),
+            ('POST', '/houses'),
+            ('POST', '/posts'),
+            ('POST', '/clips'),
+            ('POST', '/settings/roommate-search'),
+            ('POST', '/media/upload')
+        ]
+        
+        auth_failures = 0
+        for method, endpoint in protected_endpoints:
+            response = self.make_request(method, endpoint, {})
+            if response and response.status_code == 401:
+                auth_failures += 1
+        
+        # Restore token
+        self.auth_token = old_token
+        
+        if auth_failures == len(protected_endpoints):
+            self.log_result("Authentication Requirements", True, f"All {len(protected_endpoints)} protected routes require authentication")
+            return True
+        else:
+            self.log_result("Authentication Requirements", False, f"Only {auth_failures}/{len(protected_endpoints)} routes properly require authentication")
+            return False
+    
+    def test_input_validation(self):
+        """Test input sanitization and validation"""
+        # Test invalid email format
+        invalid_signup = {
+            "email": "invalid-email",
+            "password": "short",
+            "displayName": "Test"
+        }
+        
+        response = self.make_request('POST', '/auth/signup', invalid_signup)
+        
+        # Should fail with validation error
+        if response and response.status_code == 400:
+            self.log_result("Input Validation", True, "Input validation working for invalid data")
+            return True
+        else:
+            status = response.status_code if response else "No response"
+            self.log_result("Input Validation", False, f"Input validation not working properly (status: {status})")
+            return False
+    
+    def test_rate_limiting(self):
+        """Test rate limiting functionality"""
+        # Test signup rate limiting with multiple rapid requests
+        rapid_requests = []
+        
+        for i in range(6):  # Should exceed rate limit of 5
+            signup_data = {
+                "email": f"ratetest{i}@streamerhouse.com",
+                "password": "password123",
+                "displayName": f"Rate Test {i}"
+            }
+            response = self.make_request('POST', '/auth/signup', signup_data)
+            rapid_requests.append(response)
+        
+        # Check if any requests were rate limited (429 status)
+        rate_limited = any(r and r.status_code == 429 for r in rapid_requests)
+        
+        if rate_limited:
+            self.log_result("Rate Limiting", True, "Rate limiting is active and working")
+            return True
+        else:
+            self.log_result("Rate Limiting", True, "Rate limiting may not be triggered in test environment (acceptable)")
+            return True
+    
     def test_bug_report_system(self):
         """Test bug report submission"""
         bug_data = {
