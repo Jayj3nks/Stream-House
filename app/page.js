@@ -115,9 +115,15 @@ export default function App() {
       if (response.ok) {
         const data = await response.json()
         if (data.houseId) {
+          // Find the house in our list
           const house = myHouses.find(h => h.houseId === data.houseId)
-          setActiveHouse(house)
-          loadHouseFeed(token)
+          if (house) {
+            setActiveHouse(house)
+            loadHouseFeed(token)
+          }
+        } else {
+          // No active house - will be handled by dashboard logic
+          setActiveHouse(null)
         }
       }
     } catch (error) {
