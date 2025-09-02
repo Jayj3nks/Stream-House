@@ -94,6 +94,107 @@ function calculateMatchScore(user1, user2) {
   }
 }
 
+// Enhanced URL metadata fetching with caching
+async function fetchUrlMetadata(url) {
+  try {
+    const db = await connectToMongo()
+    
+    // Check cache first
+    const cached = await db.collection('url_metadata').findOne({ url })
+    if (cached && cached.cachedAt > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+      return cached.metadata
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch URL')
+    }
+    
+    const html = await response.text()
+    const $ = cheerio.load(html)
+    
+    const title = $('title').text() || 
+                  $('meta[property="og:title"]').attr('content') || 
+                  $('meta[name="twitter:title"]').attr('content') || 
+                  'Untitled'
+    
+    const description = $('meta[property="og:description"]').attr('content') || 
+                       $('meta[name="twitter:description"]').attr('content') || 
+                       $('meta[name="description"]').attr('content') || 
+                       ''
+    
+    const thumbnail = $('meta[property="og:image"]').attr('content') || 
+                     $('meta[name="twitter:image"]').attr('content') || 
+                     ''
+    
+    // Enhanced platform detection
+    let platform = 'Other'
+    let platformIcon = '🔗'
+    
+    if (url.includes('tiktok.com')) {
+      platform = 'TikTok'
+      platformIcon = '🎵'
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      platform = 'YouTube'
+      platformIcon = '📺'
+    } else if (url.includes('instagram.com')) {
+      platform = 'Instagram'
+      platformIcon = '📷'
+    } else if (url.includes('twitch.tv')) {
+      platform = 'Twitch'
+      platformIcon = '🎮'
+    } else if (url.includes('twitter.com') || url.includes('x.com')) {
+      platform = 'Twitter'
+      platformIcon = '🐦'
+    } else if (url.includes('facebook.com')) {
+      platform = 'Facebook'
+      platformIcon = '👥'
+    }
+
+    const metadata = { 
+      title: title.slice(0, 200), 
+      description: description.slice(0, 300),
+      thumbnail, 
+      platform,
+      platformIcon 
+    }
+
+    // Cache the result
+    await db.collection('url_metadata').updateOne(
+      { url },
+      { 
+        $set: { 
+          url, 
+          metadata, 
+          cachedAt: new Date() 
+        } 
+      },
+      { upsert: true }
+    )
+
+    return metadata
+  } catch (error) {
+    console.error('Error fetching URL metadata:', error)
+    return { 
+      title: 'Content Post', 
+      description: '',
+      thumbnail: '', 
+      platform: 'Other',
+      platformIcon: '🔗'
+    }
+  }
+}
+
+// Helper to generate secure verification codes
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
 // Helper function to handle CORS
 function handleCORS(response) {
   response.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGINS || '*')
@@ -118,50 +219,6 @@ function verifyToken(request) {
     return jwt.verify(token, JWT_SECRET)
   } catch (error) {
     throw new Error('Invalid token')
-  }
-}
-
-// Helper to fetch URL metadata
-async function fetchUrlMetadata(url) {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch URL')
-    }
-    
-    const html = await response.text()
-    const $ = cheerio.load(html)
-    
-    const title = $('title').text() || 
-                  $('meta[property="og:title"]').attr('content') || 
-                  $('meta[name="twitter:title"]').attr('content') || 
-                  'Untitled'
-    
-    const thumbnail = $('meta[property="og:image"]').attr('content') || 
-                     $('meta[name="twitter:image"]').attr('content') || 
-                     ''
-    
-    // Detect platform
-    let platform = 'Other'
-    if (url.includes('tiktok.com')) platform = 'TikTok'
-    else if (url.includes('youtube.com') || url.includes('youtu.be')) platform = 'YouTube'
-    else if (url.includes('instagram.com')) platform = 'Instagram'
-    else if (url.includes('twitch.tv')) platform = 'Twitch'
-    else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'Twitter'
-    
-    return { title: title.slice(0, 200), thumbnail, platform }
-  } catch (error) {
-    console.error('Error fetching URL metadata:', error)
-    return { 
-      title: 'Content Post', 
-      thumbnail: '', 
-      platform: 'Other' 
-    }
   }
 }
 
@@ -306,6 +363,233 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(userWithoutPassword))
     }
 
+    // SETTINGS ROUTES
+
+    // Verify current password for password change - POST /api/settings/password/verify
+    if (route === '/settings/password/verify' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { currentPassword } = await request.json()
+      
+      const user = await db.collection('users').findOne({ id: tokenData.userId })
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password)
+      if (!isValidPassword) {
+        return handleCORS(NextResponse.json(
+          { error: "Current password is incorrect" }, 
+          { status: 401 }
+        ))
+      }
+
+      // Generate and store verification code
+      const verificationCode = generateVerificationCode()
+      await db.collection('verification_codes').updateOne(
+        { userId: tokenData.userId, type: 'password_change' },
+        { 
+          $set: { 
+            code: verificationCode, 
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+          } 
+        },
+        { upsert: true }
+      )
+
+      // In a real app, send email here
+      console.log(`Password change verification code for ${user.email}: ${verificationCode}`)
+
+      return handleCORS(NextResponse.json({ 
+        message: "Verification code sent to email" 
+      }))
+    }
+
+    // Verify email code for password change - POST /api/settings/password/verify-code
+    if (route === '/settings/password/verify-code' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { emailCode } = await request.json()
+      
+      const storedCode = await db.collection('verification_codes').findOne({ 
+        userId: tokenData.userId, 
+        type: 'password_change',
+        code: emailCode,
+        expiresAt: { $gt: new Date() }
+      })
+
+      if (!storedCode) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid or expired verification code" }, 
+          { status: 400 }
+        ))
+      }
+
+      return handleCORS(NextResponse.json({ 
+        message: "Code verified successfully" 
+      }))
+    }
+
+    // Change password - POST /api/settings/password/change
+    if (route === '/settings/password/change' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { newPassword, emailCode } = await request.json()
+      
+      // Verify code again
+      const storedCode = await db.collection('verification_codes').findOne({ 
+        userId: tokenData.userId, 
+        type: 'password_change',
+        code: emailCode,
+        expiresAt: { $gt: new Date() }
+      })
+
+      if (!storedCode) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid or expired verification code" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+      // Update password
+      await db.collection('users').updateOne(
+        { id: tokenData.userId },
+        { $set: { password: hashedPassword } }
+      )
+
+      // Delete verification code
+      await db.collection('verification_codes').deleteOne({ _id: storedCode._id })
+
+      return handleCORS(NextResponse.json({ 
+        message: "Password updated successfully" 
+      }))
+    }
+
+    // Change username - POST /api/settings/username
+    if (route === '/settings/username' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { newUsername, password } = await request.json()
+      
+      const user = await db.collection('users').findOne({ id: tokenData.userId })
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password)
+      if (!isValidPassword) {
+        return handleCORS(NextResponse.json(
+          { error: "Password is incorrect" }, 
+          { status: 401 }
+        ))
+      }
+
+      // Update username
+      await db.collection('users').updateOne(
+        { id: tokenData.userId },
+        { $set: { displayName: newUsername } }
+      )
+
+      return handleCORS(NextResponse.json({ 
+        message: "Username updated successfully" 
+      }))
+    }
+
+    // Send email change confirmation - POST /api/settings/email/send-code
+    if (route === '/settings/email/send-code' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { newEmail, password } = await request.json()
+      
+      const user = await db.collection('users').findOne({ id: tokenData.userId })
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password)
+      if (!isValidPassword) {
+        return handleCORS(NextResponse.json(
+          { error: "Password is incorrect" }, 
+          { status: 401 }
+        ))
+      }
+
+      // Check if new email is already taken
+      const existingUser = await db.collection('users').findOne({ email: newEmail })
+      if (existingUser && existingUser.id !== tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Email is already in use" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Generate and store verification code
+      const verificationCode = generateVerificationCode()
+      await db.collection('verification_codes').updateOne(
+        { userId: tokenData.userId, type: 'email_change' },
+        { 
+          $set: { 
+            code: verificationCode,
+            newEmail: newEmail,
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+          } 
+        },
+        { upsert: true }
+      )
+
+      // In a real app, send email here
+      console.log(`Email change verification code for ${newEmail}: ${verificationCode}`)
+
+      return handleCORS(NextResponse.json({ 
+        message: "Confirmation code sent to new email" 
+      }))
+    }
+
+    // Confirm email change - POST /api/settings/email/confirm
+    if (route === '/settings/email/confirm' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { newEmail, confirmationCode } = await request.json()
+      
+      const storedCode = await db.collection('verification_codes').findOne({ 
+        userId: tokenData.userId, 
+        type: 'email_change',
+        code: confirmationCode,
+        newEmail: newEmail,
+        expiresAt: { $gt: new Date() }
+      })
+
+      if (!storedCode) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid or expired confirmation code" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Update email
+      await db.collection('users').updateOne(
+        { id: tokenData.userId },
+        { $set: { email: newEmail } }
+      )
+
+      // Delete verification code
+      await db.collection('verification_codes').deleteOne({ _id: storedCode._id })
+
+      return handleCORS(NextResponse.json({ 
+        message: "Email updated successfully" 
+      }))
+    }
+
     // SQUAD ROUTES
 
     // Create squad - POST /api/squads
@@ -362,7 +646,7 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Fetch URL metadata
+      // Fetch URL metadata with caching
       const metadata = await fetchUrlMetadata(url)
 
       // Get user info
@@ -375,8 +659,10 @@ async function handleRoute(request, { params }) {
         userId,
         authorName: user?.displayName || 'Unknown',
         title: metadata.title,
+        description: metadata.description,
         thumbnail: metadata.thumbnail,
         platform: metadata.platform,
+        platformIcon: metadata.platformIcon,
         createdAt: new Date(),
         engagements: []
       }
@@ -408,28 +694,70 @@ async function handleRoute(request, { params }) {
 
     // ENGAGEMENT ROUTES
 
-    // Create engagement - POST /api/engagements
-    if (route === '/engagements' && method === 'POST') {
+    // Track engagement click - POST /api/engagements/click
+    if (route === '/engagements/click' && method === 'POST') {
       const tokenData = verifyToken(request)
-      const { postId, userId, type } = await request.json()
+      const { postId, userId, type, redirectUrl } = await request.json()
       
-      if (!postId || !userId || !type) {
+      if (!postId || !userId || !type || !redirectUrl) {
         return handleCORS(NextResponse.json(
-          { error: "Post ID, user ID, and type are required" }, 
+          { error: "Post ID, user ID, type, and redirect URL are required" }, 
           { status: 400 }
         ))
       }
 
-      // Check if user already engaged with this post in the same way
+      // Check if user already clicked within 24 hours
+      const existingClick = await db.collection('engagement_clicks').findOne({
+        postId,
+        userId,
+        type,
+        clickedAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+      })
+
+      if (existingClick) {
+        return handleCORS(NextResponse.json(
+          { message: "Already tracked", redirectUrl }, 
+          { status: 200 }
+        ))
+      }
+
+      // Record the click
+      const click = {
+        id: uuidv4(),
+        postId,
+        userId,
+        type,
+        clickedAt: new Date(),
+        redirectUrl
+      }
+
+      await db.collection('engagement_clicks').insertOne(click)
+
+      return handleCORS(NextResponse.json({ 
+        message: "Click tracked", 
+        redirectUrl 
+      }))
+    }
+
+    // Verify engagement and award credits - POST /api/engagements/verify
+    if (route === '/engagements/verify' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { postId, userId, type, verificationData } = await request.json()
+      
+      // For now, we'll implement a simple verification
+      // In production, this would integrate with platform APIs
+      
+      // Check if user already earned credits for this post in the last 24h
       const existingEngagement = await db.collection('engagements').findOne({
         postId,
         userId,
-        type
+        type,
+        createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
       })
 
       if (existingEngagement) {
         return handleCORS(NextResponse.json(
-          { error: "Already engaged" }, 
+          { error: "Credits already earned for this engagement" }, 
           { status: 400 }
         ))
       }
@@ -438,20 +766,25 @@ async function handleRoute(request, { params }) {
         id: uuidv4(),
         postId,
         userId,
-        type, // 'like', 'comment', 'share'
+        type,
+        verified: true,
+        verificationData,
         createdAt: new Date()
       }
 
       await db.collection('engagements').insertOne(engagement)
 
-      // Update user credits
+      // Award credits
       const creditsEarned = type === 'like' ? 1 : type === 'comment' ? 2 : 3
       await db.collection('users').updateOne(
         { id: userId },
         { $inc: { credits: creditsEarned } }
       )
 
-      return handleCORS(NextResponse.json(engagement))
+      return handleCORS(NextResponse.json({ 
+        engagement, 
+        creditsEarned 
+      }))
     }
 
     // CREDITS ROUTES
