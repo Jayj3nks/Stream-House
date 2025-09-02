@@ -135,11 +135,12 @@ async function fetchUrlMetadata(url) {
     // Enhanced platform detection with canonical URL creation
     let provider = 'Other'
     let platformIcon = '🔗'
-    let canonicalUrl = url
+    let canonicalUrl = url // Default to original URL
     
     if (url.includes('tiktok.com')) {
       provider = 'TikTok'
       platformIcon = '🎵'
+      canonicalUrl = url // TikTok URLs are usually canonical
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
       provider = 'YouTube'
       platformIcon = '📺'
@@ -147,19 +148,25 @@ async function fetchUrlMetadata(url) {
       if (url.includes('youtu.be/')) {
         const videoId = url.split('youtu.be/')[1].split('?')[0]
         canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
+      } else {
+        canonicalUrl = url
       }
     } else if (url.includes('instagram.com')) {
       provider = 'Instagram'
       platformIcon = '📷'
+      canonicalUrl = url
     } else if (url.includes('twitch.tv')) {
       provider = 'Twitch'
       platformIcon = '🎮'
+      canonicalUrl = url
     } else if (url.includes('twitter.com') || url.includes('x.com')) {
       provider = 'Twitter'
       platformIcon = '🐦'
+      canonicalUrl = url
     } else if (url.includes('facebook.com')) {
       provider = 'Facebook'
       platformIcon = '👥'
+      canonicalUrl = url
     }
 
     const metadata = { 
@@ -168,7 +175,7 @@ async function fetchUrlMetadata(url) {
       thumbnailUrl: thumbnail, 
       provider,
       platformIcon,
-      canonicalUrl,
+      canonicalUrl: canonicalUrl || url, // Ensure we always have a URL
       originalUrl: url
     }
 
