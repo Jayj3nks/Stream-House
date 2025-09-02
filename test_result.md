@@ -395,10 +395,14 @@ metadata:
   test_coverage: "95.7%"
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Complete Rebrand: Squad → House terminology"
+    - "Profile Picture Upload and Display System"
+    - "Enhanced Post Management UI"
+    - "Find Roommates Page with Opt-in Toggle"
   stuck_tasks: []
-  test_all: true
-  test_priority: "comprehensive_completed"
+  test_all: false
+  test_priority: "high_first"
 
 agent_communication:
     - agent: "testing"
