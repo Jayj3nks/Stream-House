@@ -82,6 +82,11 @@ def test_engagement_flow():
     click_response = session.post(f"{BASE_URL}/engagements/click", json=click_data, headers={'Authorization': f'Bearer {token}'})
     print(f"Click response: {click_response.status_code} - {click_response.text}")
     
+    # Try duplicate click
+    print("Testing duplicate click...")
+    duplicate_click_response = session.post(f"{BASE_URL}/engagements/click", json=click_data, headers={'Authorization': f'Bearer {token}'})
+    print(f"Duplicate click response: {duplicate_click_response.status_code} - {duplicate_click_response.text}")
+    
     # Verify engagement
     verify_data = {
         "postId": post_id,
