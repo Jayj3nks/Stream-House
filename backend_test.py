@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Streamer House Backend API Testing Suite
-Tests the updated backend API with repository pattern and in-memory adapters
+Tests Profile, Roommates & Dashboard fixes with TTL rules
 """
 
 import requests
 import json
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Configuration
 BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://contentcrew.preview.emergentagent.com')
@@ -18,9 +18,9 @@ class StreamerHouseAPITester:
     def __init__(self):
         self.session = requests.Session()
         self.auth_token = None
-        self.test_user = None
-        self.test_house = None
-        self.test_post = None
+        self.test_user_id = None
+        self.test_username = None
+        self.test_house_id = None
         self.results = []
         
     def log_result(self, test_name, success, message, details=None):
