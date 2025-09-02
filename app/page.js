@@ -593,40 +593,45 @@ export default function App() {
                         <Separator />
 
                         <div className="flex items-center justify-between">
-                          <div className="flex space-x-4">
+                          <div className="flex space-x-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEngagement(post.id, 'like')}
+                              onClick={() => handleEngagement(post.id, 'like', post.url, post.platform)}
                               className="flex items-center space-x-1"
                             >
                               <Heart className="h-4 w-4" />
-                              <span>{likesCount}</span>
+                              <span>Like on {post.platform}</span>
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEngagement(post.id, 'comment')}
+                              onClick={() => handleEngagement(post.id, 'comment', post.url, post.platform)}
                               className="flex items-center space-x-1"
                             >
                               <MessageCircle className="h-4 w-4" />
-                              <span>{commentsCount}</span>
+                              <span>Comment on {post.platform}</span>
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEngagement(post.id, 'share')}
+                              onClick={() => handleEngagement(post.id, 'share', post.url, post.platform)}
                               className="flex items-center space-x-1"
                             >
                               <Share className="h-4 w-4" />
-                              <span>{sharesCount}</span>
+                              <span>Share on {post.platform}</span>
                             </Button>
                           </div>
-                          {progress >= 100 && (
-                            <Badge variant="success" className="bg-green-100 text-green-800">
-                              Complete!
-                            </Badge>
-                          )}
+                          <div className="flex items-center space-x-2">
+                            <div className="text-sm text-muted-foreground">
+                              👍 {likesCount} 💬 {commentsCount} 🔄 {sharesCount}
+                            </div>
+                            {progress >= 100 && (
+                              <Badge variant="success" className="bg-green-100 text-green-800">
+                                Complete!
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
