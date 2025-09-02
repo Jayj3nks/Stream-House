@@ -480,6 +480,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ FAILED - Profile page returns 404 error when accessing /api/users/testuser. Profile page structure exists but backend API integration is not working properly."
+        - working: false
+          agent: "testing"
+          comment: "❌ STILL FAILING AFTER BACKEND FIXES - Profile page accessible via direct URL but shows 'Profile not found' error. API integration issue persists with /api/users/{username} endpoint returning 404 errors. Username resolution may be the issue (tested with 'alexstreamer' username)."
 
   - task: "Help/Bug Report System"
     implemented: true
