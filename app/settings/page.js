@@ -5,15 +5,23 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { Shield, User, Mail, Key, ArrowLeft } from 'lucide-react'
+import { Shield, User, Mail, Key, ArrowLeft, Upload, Camera } from 'lucide-react'
 
 export default function SettingsPage() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+
+  // Profile picture upload
+  const [uploadingPicture, setUploadingPicture] = useState(false)
+
+  // Roommate search opt-in toggle
+  const [appearInRoommateSearch, setAppearInRoommateSearch] = useState(false)
 
   // Password change form
   const [passwordForm, setPasswordForm] = useState({
@@ -58,11 +66,114 @@ export default function SettingsPage() {
         setUser(userData)
         setUsernameForm({ ...usernameForm, newUsername: userData.displayName })
         setEmailForm({ ...emailForm, newEmail: userData.email })
+        setAppearInRoommateSearch(userData.appearInRoommateSearch || false)
       } else {
         window.location.href = '/'
       }
     } catch (error) {
       console.error('Error loading user data:', error)
+    }
+  }
+
+  const handleProfilePictureUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setUploadingPicture(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUser(prev => ({ ...prev, profilePictureUrl: data.url }))
+        toast({
+          title: "Profile picture updated",
+          description: "Your new profile picture has been saved."
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Upload failed",
+          description: error.error || "Failed to upload profile picture.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setUploadingPicture(false)
+    }
+  }
+
+  const updateRoommateSearchSetting = async (enabled) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/settings/roommate-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ appearInRoommateSearch: enabled })
+      })
+
+      if (response.ok) {
+        setAppearInRoommateSearch(enabled)
+        setUser(prev => ({ ...prev, appearInRoommateSearch: enabled }))
+        toast({
+          title: "Settings updated",
+          description: enabled ? "You'll now appear in roommate search." : "You're now hidden from roommate search."
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.error || "Failed to update setting.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -288,7 +399,7 @@ export default function SettingsPage() {
           <div className="flex items-center space-x-4">
             <Button variant="ghost" onClick={() => window.location.href = '/'}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Squad
+              Back to House
             </Button>
             <h1 className="text-2xl font-bold text-purple-600">Account Settings</h1>
           </div>
@@ -296,111 +407,60 @@ export default function SettingsPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Tabs defaultValue="security" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="security">Security</TabsTrigger>
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="privacy">Privacy</TabsTrigger>
           </TabsList>
-
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Change Password</span>
-                </CardTitle>
-                <CardDescription>
-                  Update your password to keep your account secure
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {passwordStep === 1 && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Current Password</Label>
-                      <Input
-                        id="currentPassword"
-                        type="password"
-                        value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                      />
-                    </div>
-                    <Button 
-                      onClick={() => handlePasswordChange(1)} 
-                      disabled={loading || !passwordForm.currentPassword}
-                    >
-                      <Key className="h-4 w-4 mr-2" />
-                      {loading ? "Verifying..." : "Verify & Send Code"}
-                    </Button>
-                  </div>
-                )}
-
-                {passwordStep === 2 && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="emailCode">Email Verification Code</Label>
-                      <Input
-                        id="emailCode"
-                        value={passwordForm.emailCode}
-                        onChange={(e) => setPasswordForm({...passwordForm, emailCode: e.target.value})}
-                        placeholder="Enter code from email"
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        onClick={() => handlePasswordChange(2)} 
-                        disabled={loading || !passwordForm.emailCode}
-                      >
-                        {loading ? "Verifying..." : "Verify Code"}
-                      </Button>
-                      <Button variant="outline" onClick={() => setPasswordStep(1)}>
-                        Back
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {passwordStep === 3 && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input
-                        id="newPassword"
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        onClick={() => handlePasswordChange(3)} 
-                        disabled={loading || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
-                      >
-                        {loading ? "Updating..." : "Update Password"}
-                      </Button>
-                      <Button variant="outline" onClick={() => setPasswordStep(2)}>
-                        Back
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
+            {/* Profile Picture */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Camera className="h-5 w-5" />
+                  <span>Profile Picture</span>
+                </CardTitle>
+                <CardDescription>
+                  Update your profile picture (max 5MB)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={user.profilePictureUrl} />
+                    <AvatarFallback className="text-2xl">
+                      {user.displayName?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Label htmlFor="avatar-upload" className="cursor-pointer">
+                      <Button disabled={uploadingPicture} asChild>
+                        <span>
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingPicture ? "Uploading..." : "Upload New Picture"}
+                        </span>
+                      </Button>
+                    </Label>
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePictureUpload}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG, GIF up to 5MB
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Display Name */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -514,6 +574,130 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5" />
+                  <span>Change Password</span>
+                </CardTitle>
+                <CardDescription>
+                  Update your password to keep your account secure
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {passwordStep === 1 && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input
+                        id="currentPassword"
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                      />
+                    </div>
+                    <Button 
+                      onClick={() => handlePasswordChange(1)} 
+                      disabled={loading || !passwordForm.currentPassword}
+                    >
+                      <Key className="h-4 w-4 mr-2" />
+                      {loading ? "Verifying..." : "Verify & Send Code"}
+                    </Button>
+                  </div>
+                )}
+
+                {passwordStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emailCode">Email Verification Code</Label>
+                      <Input
+                        id="emailCode"
+                        value={passwordForm.emailCode}
+                        onChange={(e) => setPasswordForm({...passwordForm, emailCode: e.target.value})}
+                        placeholder="Enter code from email"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => handlePasswordChange(2)} 
+                        disabled={loading || !passwordForm.emailCode}
+                      >
+                        {loading ? "Verifying..." : "Verify Code"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setPasswordStep(1)}>
+                        Back
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {passwordStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => handlePasswordChange(3)} 
+                        disabled={loading || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
+                      >
+                        {loading ? "Updating..." : "Update Password"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setPasswordStep(2)}>
+                        Back
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Privacy Tab */}
+          <TabsContent value="privacy" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Roommate Search</CardTitle>
+                <CardDescription>
+                  Control whether you appear in the roommate finder for other creators to discover
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="roommate-search">Appear in roommate search</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, other creators can find and invite you to their house
+                    </p>
+                  </div>
+                  <Switch
+                    id="roommate-search"
+                    checked={appearInRoommateSearch}
+                    onCheckedChange={updateRoommateSearchSetting}
+                    disabled={loading}
+                  />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
