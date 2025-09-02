@@ -359,18 +359,20 @@ def run_creatorsquad_v2_tests():
     print("\n1. TESTING ENHANCED USER SIGNUP")
     print("-" * 40)
     
+    timestamp = int(time.time())
+    
     user_a = tester.test_user_signup(
-        "creator_a@test.com", 
+        f"creator_a_{timestamp}@test.com", 
         "password123", 
-        "Creator Alpha",
+        f"Creator Alpha {timestamp}",
         platforms=["YouTube", "Twitch"],
         niches=["Gaming", "Tech Reviews"]
     )
     
     user_b = tester.test_user_signup(
-        "creator_b@test.com", 
+        f"creator_b_{timestamp}@test.com", 
         "password123", 
-        "Creator Beta",
+        f"Creator Beta {timestamp}",
         platforms=["TikTok", "Instagram"],
         niches=["Lifestyle", "Gaming"]
     )
