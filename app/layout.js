@@ -2,8 +2,8 @@ import './globals.css'
 import { ThemeProvider } from "next-themes"
 
 export const metadata = {
-  title: 'CreatorSquad - Creator Support & Collab Platform',
-  description: 'Help creators organize into squads, boost each other\'s posts, and find collaborations',
+  title: 'Streamer House - Creator Support & Collab Platform',
+  description: 'Help creators organize into houses, boost each other\'s posts, and find collaborations',
 }
 
 export default function RootLayout({ children }) {

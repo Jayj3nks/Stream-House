@@ -111,7 +111,7 @@ export default function SignupPage() {
       if (response.ok) {
         localStorage.setItem('token', data.token)
         toast({
-          title: "Welcome to CreatorSquad!",
+          title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
         router.push('/')
@@ -140,7 +140,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-purple-600">Join CreatorSquad</CardTitle>
+          <CardTitle className="text-2xl font-bold text-purple-600">Join Streamer House</CardTitle>
           <CardDescription>
             Step {step} of 4 - Let's set up your creator profile
           </CardDescription>
@@ -189,16 +189,6 @@ export default function SignupPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio (Optional)</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  placeholder="Tell other creators about yourself..."
-                  rows={3}
-                />
-              </div>
             </div>
           )}
 
@@ -206,11 +196,11 @@ export default function SignupPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <Users className="mr-2 h-5 w-5" />
-                Platforms & Content
+                Platforms & Niches
               </h3>
               
               <div className="space-y-3">
-                <Label>Which platforms do you create on?</Label>
+                <Label>Which platforms do you create content on?</Label>
                 <div className="flex flex-wrap gap-2">
                   {PLATFORMS.map((platform) => (
                     <Badge
@@ -242,13 +232,13 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-3">
-                <Label>Games you play/stream (if applicable)</Label>
+                <Label>Which games do you play/stream? (Gaming creators)</Label>
                 <div className="flex flex-wrap gap-2">
                   {GAMES.map((game) => (
                     <Badge
                       key={game}
                       variant={formData.games.includes(game) ? "default" : "outline"}
-                      className="cursor-pointer"
+                      className="cursor-pointer text-xs"
                       onClick={() => handleGameToggle(game)}
                     >
                       {game}
@@ -263,57 +253,60 @@ export default function SignupPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center">
                 <MapPin className="mr-2 h-5 w-5" />
-                Location & Time Zone
+                Location & Schedule
               </h3>
               
               <div className="space-y-2">
-                <Label htmlFor="city">City (Optional)</Label>
+                <Label htmlFor="city">City/Location (for local collabs)</Label>
                 <Input
                   id="city"
                   value={formData.city}
                   onChange={(e) => setFormData({...formData, city: e.target.value})}
-                  placeholder="e.g. Los Angeles, New York, London"
+                  placeholder="e.g., Los Angeles, CA"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Help find collaborators near you for in-person content
-                </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="timeZone">Time Zone</Label>
-                <Input
-                  id="timeZone"
-                  value={formData.timeZone}
-                  onChange={(e) => setFormData({...formData, timeZone: e.target.value})}
-                  placeholder="Detected automatically"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Clock className="mr-2 h-5 w-5" />
-                Content Schedule
-              </h3>
-
-              <div className="flex items-center space-x-2 mb-4">
-                <Checkbox
-                  id="hasSchedule"
-                  checked={formData.hasSchedule}
-                  onCheckedChange={(checked) => setFormData({...formData, hasSchedule: checked})}
-                />
-                <Label htmlFor="hasSchedule">I have a regular content schedule</Label>
+                <Select 
+                  value={formData.timeZone} 
+                  onValueChange={(value) => setFormData({...formData, timeZone: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                    <SelectItem value="America/Chicago">Central Time</SelectItem>
+                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                    <SelectItem value="Europe/London">GMT</SelectItem>
+                    <SelectItem value="Europe/Paris">Central European Time</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {formData.hasSchedule ? (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="hasSchedule"
+                    checked={formData.hasSchedule}
+                    onCheckedChange={(checked) => setFormData({...formData, hasSchedule: checked})}
+                  />
+                  <Label htmlFor="hasSchedule" className="flex items-center">
+                    <Clock className="mr-1 h-4 w-4" />
+                    I have a regular streaming/posting schedule
+                  </Label>
+                </div>
+              </div>
+
+              {formData.hasSchedule && (
                 <div className="space-y-3">
-                  <Label>When do you typically create/stream content?</Label>
+                  <Label>When do you typically stream/post?</Label>
                   <div className="space-y-2">
                     {DAYS.map((day) => (
-                      <div key={day} className="border rounded-lg p-3">
-                        <h4 className="font-medium mb-2">{day}</h4>
+                      <div key={day} className="space-y-2">
+                        <p className="text-sm font-medium">{day}</p>
                         <div className="flex flex-wrap gap-1">
                           {TIME_SLOTS.map((timeSlot) => (
                             <Badge
@@ -330,7 +323,25 @@ export default function SignupPage() {
                     ))}
                   </div>
                 </div>
-              ) : (
+              )}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">About You</h3>
+              <div className="space-y-2">
+                <Label htmlFor="bio">Tell us about yourself (optional)</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  placeholder="Share a bit about your content, goals, or what makes you unique..."
+                  rows={4}
+                />
+              </div>
+              
+              {!formData.hasSchedule && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-blue-800">
                     No problem! You'll still be matched with creators based on your niches, 
