@@ -15,33 +15,36 @@ import { ArrowLeft, Search, Users, MapPin, Clock, UserPlus, Filter } from 'lucid
 export default function RoommatesPage() {
   const [user, setUser] = useState(null)
   const [roommates, setRoommates] = useState([])
-  const [filteredRoommates, setFilteredRoommates] = useState([])
   const [loading, setLoading] = useState(false)
   const [inviteLoading, setInviteLoading] = useState({})
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 })
   const { toast } = useToast()
 
   // Filters
   const [filters, setFilters] = useState({
     niche: '',
-    platform: '',
-    city: '',
-    hasSchedule: '',
-    searchQuery: ''
+    platforms: '',
+    timezone: '',
+    region: '',
+    experience: '',
+    q: ''
   })
 
   useEffect(() => {
     loadUserData()
-    loadRoommates()
   }, [])
 
   useEffect(() => {
-    applyFilters()
-  }, [roommates, filters])
+    if (user) {
+      loadRoommates()
+    }
+  }, [user, filters, pagination.page])
 
   const loadUserData = async () => {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
+        // Redirect to login with next parameter - NO LOGOUT
         window.location.href = '/login?next=/roommates'
         return
       }
@@ -53,7 +56,7 @@ export default function RoommatesPage() {
         const userData = await response.json()
         setUser(userData)
       } else if (response.status === 401) {
-        // Redirect to login with next parameter instead of logging out
+        // Redirect to login with next parameter - NO SESSION CLEARING
         window.location.href = '/login?next=/roommates'
       } else {
         toast({
@@ -76,13 +79,32 @@ export default function RoommatesPage() {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('/api/roommates', {
+      const searchParams = new URLSearchParams()
+      
+      // Add filters to search params
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          searchParams.append(key, value)
+        }
+      })
+      
+      searchParams.append('page', pagination.page.toString())
+      searchParams.append('pageSize', pagination.pageSize.toString())
+      
+      const response = await fetch(`/api/roommates?${searchParams}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       
       if (response.ok) {
         const data = await response.json()
-        setRoommates(data)
+        setRoommates(data.items)
+        setPagination(prev => ({
+          ...prev,
+          total: data.total
+        }))
+      } else if (response.status === 401) {
+        // Redirect to login - NO LOGOUT
+        window.location.href = '/login?next=/roommates'
       } else {
         toast({
           title: "Error",
@@ -100,47 +122,6 @@ export default function RoommatesPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const applyFilters = () => {
-    let filtered = [...roommates]
-
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase()
-      filtered = filtered.filter(roommate => 
-        roommate.displayName.toLowerCase().includes(query) ||
-        roommate.bio?.toLowerCase().includes(query) ||
-        roommate.niches?.some(niche => niche.toLowerCase().includes(query)) ||
-        roommate.games?.some(game => game.toLowerCase().includes(query))
-      )
-    }
-
-    if (filters.niche) {
-      filtered = filtered.filter(roommate => 
-        roommate.niches?.includes(filters.niche)
-      )
-    }
-
-    if (filters.platform) {
-      filtered = filtered.filter(roommate => 
-        roommate.platforms?.includes(filters.platform)
-      )
-    }
-
-    if (filters.city) {
-      filtered = filtered.filter(roommate => 
-        roommate.city?.toLowerCase().includes(filters.city.toLowerCase())
-      )
-    }
-
-    if (filters.hasSchedule !== '') {
-      const hasSchedule = filters.hasSchedule === 'true'
-      filtered = filtered.filter(roommate => 
-        roommate.hasSchedule === hasSchedule
-      )
-    }
-
-    setFilteredRoommates(filtered)
   }
 
   const inviteToHouse = async (roommateId) => {
@@ -187,11 +168,17 @@ export default function RoommatesPage() {
   const clearFilters = () => {
     setFilters({
       niche: '',
-      platform: '',
-      city: '',
-      hasSchedule: '',
-      searchQuery: ''
+      platforms: '',
+      timezone: '',
+      region: '',
+      experience: '',
+      q: ''
     })
+  }
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
+    setPagination(prev => ({ ...prev, page: 1 })) // Reset to first page
   }
 
   if (!user) {
@@ -229,7 +216,7 @@ export default function RoommatesPage() {
               <span>Filter Roommates</span>
             </CardTitle>
             <CardDescription>
-              Find creators who match your interests and schedule
+              Find creators who match your interests and preferences
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -238,80 +225,106 @@ export default function RoommatesPage() {
                 <Label htmlFor="search">Search</Label>
                 <Input
                   id="search"
-                  placeholder="Search by name, bio, niche..."
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+                  placeholder="Search by username..."
+                  value={filters.q}
+                  onChange={(e) => handleFilterChange('q', e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="niche">Niche</Label>
-                <Select value={filters.niche} onValueChange={(value) => setFilters(prev => ({ ...prev, niche: value }))}>
+                <Select value={filters.niche} onValueChange={(value) => handleFilterChange('niche', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any niche" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Any niche</SelectItem>
-                    <SelectItem value="Gaming">Gaming</SelectItem>
-                    <SelectItem value="Fitness">Fitness</SelectItem>
-                    <SelectItem value="Beauty">Beauty</SelectItem>
-                    <SelectItem value="Cooking">Cooking</SelectItem>
-                    <SelectItem value="Music">Music</SelectItem>
-                    <SelectItem value="Dance">Dance</SelectItem>
-                    <SelectItem value="Comedy">Comedy</SelectItem>
-                    <SelectItem value="Education">Education</SelectItem>
-                    <SelectItem value="Tech">Tech</SelectItem>
-                    <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+                    <SelectItem value="gaming">Gaming</SelectItem>
+                    <SelectItem value="fitness">Fitness</SelectItem>
+                    <SelectItem value="beauty">Beauty</SelectItem>
+                    <SelectItem value="cooking">Cooking</SelectItem>
+                    <SelectItem value="music">Music</SelectItem>
+                    <SelectItem value="dance">Dance</SelectItem>
+                    <SelectItem value="comedy">Comedy</SelectItem>
+                    <SelectItem value="education">Education</SelectItem>
+                    <SelectItem value="tech">Tech</SelectItem>
+                    <SelectItem value="lifestyle">Lifestyle</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="platform">Platform</Label>
-                <Select value={filters.platform} onValueChange={(value) => setFilters(prev => ({ ...prev, platform: value }))}>
+                <Label htmlFor="platforms">Platforms</Label>
+                <Select value={filters.platforms} onValueChange={(value) => handleFilterChange('platforms', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Any platform" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Any platform</SelectItem>
-                    <SelectItem value="TikTok">TikTok</SelectItem>
-                    <SelectItem value="YouTube">YouTube</SelectItem>
-                    <SelectItem value="Instagram">Instagram</SelectItem>
-                    <SelectItem value="Twitch">Twitch</SelectItem>
-                    <SelectItem value="Twitter/X">Twitter/X</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="youtube">YouTube</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="twitch">Twitch</SelectItem>
+                    <SelectItem value="twitter">Twitter/X</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  placeholder="Search by city..."
-                  value={filters.city}
-                  onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="schedule">Schedule</Label>
-                <Select value={filters.hasSchedule} onValueChange={(value) => setFilters(prev => ({ ...prev, hasSchedule: value }))}>
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select value={filters.timezone} onValueChange={(value) => handleFilterChange('timezone', value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any schedule" />
+                    <SelectValue placeholder="Any timezone" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any schedule</SelectItem>
-                    <SelectItem value="true">Has regular schedule</SelectItem>
-                    <SelectItem value="false">Flexible schedule</SelectItem>
+                    <SelectItem value="">Any timezone</SelectItem>
+                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                    <SelectItem value="America/Chicago">Central Time</SelectItem>
+                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                    <SelectItem value="Europe/London">GMT</SelectItem>
+                    <SelectItem value="Europe/Paris">Central European Time</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="flex items-end">
-                <Button variant="outline" onClick={clearFilters} className="w-full">
-                  Clear Filters
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="region">Region</Label>
+                <Select value={filters.region} onValueChange={(value) => handleFilterChange('region', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any region</SelectItem>
+                    <SelectItem value="US-East">US East</SelectItem>
+                    <SelectItem value="US-West">US West</SelectItem>
+                    <SelectItem value="US-Central">US Central</SelectItem>
+                    <SelectItem value="Europe">Europe</SelectItem>
+                    <SelectItem value="Asia">Asia</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="experience">Experience</Label>
+                <Select value={filters.experience} onValueChange={(value) => handleFilterChange('experience', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any experience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any experience</SelectItem>
+                    <SelectItem value="novice">Novice</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <Button variant="outline" onClick={clearFilters}>
+                Clear All Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -320,11 +333,11 @@ export default function RoommatesPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">
-              Available Roommates ({filteredRoommates.length})
+              Available Roommates
             </h2>
             <Badge variant="secondary" className="flex items-center space-x-1">
               <Search className="h-3 w-3" />
-              <span>{filteredRoommates.length} found</span>
+              <span>{pagination.total} found</span>
             </Badge>
           </div>
 
@@ -333,58 +346,51 @@ export default function RoommatesPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
               <p>Loading roommates...</p>
             </div>
-          ) : filteredRoommates.length === 0 ? (
+          ) : roommates.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No roommates found</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   Try adjusting your filters or check back later for new creators.
                 </p>
+                <Button onClick={clearFilters}>
+                  Clear Filters
+                </Button>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRoommates.map((roommate) => (
-                <Card key={roommate.id} className="hover:shadow-lg transition-shadow">
+              {roommates.map((roommate) => (
+                <Card key={roommate.userId} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-12 h-12">
-                        <AvatarImage src={roommate.profilePictureUrl} />
+                        <AvatarImage src={roommate.avatarUrl} />
                         <AvatarFallback>
-                          {roommate.displayName?.[0]?.toUpperCase()}
+                          {roommate.username?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <h3 className="font-semibold">{roommate.displayName}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {roommate.totalPoints || 0} points
-                        </p>
+                        <h3 className="font-semibold">{roommate.username}</h3>
+                        {roommate.experience && (
+                          <Badge variant="outline" className="text-xs">
+                            {roommate.experience}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {roommate.bio && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {roommate.bio}
-                      </p>
-                    )}
-
-                    {roommate.city && (
-                      <div className="flex items-center space-x-2 text-sm">
-                        <MapPin className="h-4 w-4" />
-                        <span>{roommate.city}</span>
+                    {roommate.niche && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">NICHE</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {roommate.niche}
+                        </Badge>
                       </div>
                     )}
 
-                    {roommate.hasSchedule && (
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Clock className="h-4 w-4" />
-                        <span>Regular schedule</span>
-                      </div>
-                    )}
-
-                    {/* Platforms */}
                     {roommate.platforms && roommate.platforms.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-2">PLATFORMS</p>
@@ -403,41 +409,20 @@ export default function RoommatesPage() {
                       </div>
                     )}
 
-                    {/* Niches */}
-                    {roommate.niches && roommate.niches.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">NICHES</p>
-                        <div className="flex flex-wrap gap-1">
-                          {roommate.niches.slice(0, 3).map((niche) => (
-                            <Badge key={niche} variant="secondary" className="text-xs">
-                              {niche}
-                            </Badge>
-                          ))}
-                          {roommate.niches.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{roommate.niches.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Gaming */}
-                    {roommate.games && roommate.games.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">GAMES</p>
-                        <div className="flex flex-wrap gap-1">
-                          {roommate.games.slice(0, 2).map((game) => (
-                            <Badge key={game} variant="outline" className="text-xs">
-                              {game}
-                            </Badge>
-                          ))}
-                          {roommate.games.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{roommate.games.length - 2} more
-                            </Badge>
-                          )}
-                        </div>
+                    {(roommate.timezone || roommate.region) && (
+                      <div className="flex items-center text-sm text-muted-foreground space-x-2">
+                        {roommate.region && (
+                          <span className="flex items-center space-x-1">
+                            <MapPin className="h-3 w-3" />
+                            <span>{roommate.region}</span>
+                          </span>
+                        )}
+                        {roommate.timezone && (
+                          <span className="flex items-center space-x-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{roommate.timezone?.replace('America/', '').replace('_', ' ')}</span>
+                          </span>
+                        )}
                       </div>
                     )}
 
@@ -451,18 +436,41 @@ export default function RoommatesPage() {
                         View Profile
                       </Button>
                       <Button
-                        onClick={() => inviteToHouse(roommate.id)}
-                        disabled={inviteLoading[roommate.id]}
+                        onClick={() => inviteToHouse(roommate.userId)}
+                        disabled={inviteLoading[roommate.userId]}
                         size="sm"
                         className="flex-1"
                       >
                         <UserPlus className="h-4 w-4 mr-1" />
-                        {inviteLoading[roommate.id] ? "Inviting..." : "Invite"}
+                        {inviteLoading[roommate.userId] ? "Inviting..." : "Invite"}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!loading && roommates.length > 0 && Math.ceil(pagination.total / pagination.pageSize) > 1 && (
+            <div className="flex justify-center items-center space-x-2 mt-8">
+              <Button
+                variant="outline"
+                disabled={pagination.page === 1}
+                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {pagination.page} of {Math.ceil(pagination.total / pagination.pageSize)}
+              </span>
+              <Button
+                variant="outline"
+                disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
+                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              >
+                Next
+              </Button>
             </div>
           )}
         </div>
