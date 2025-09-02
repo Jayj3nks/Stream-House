@@ -861,19 +861,36 @@ class CreatorSquadAPITester:
         print("TESTING ENHANCED ENGAGEMENT SYSTEM")
         print("="*60)
         
-        if not self.auth_token or not self.test_user_id or not self.test_post_id:
+        if not self.auth_token or not self.test_user_id or not self.test_squad_id:
             return self.log_test(
                 "Enhanced Engagement System", 
                 False, 
-                "Missing auth token, user ID, or post ID. Run previous tests first."
+                "Missing auth token, user ID, or squad ID. Run previous tests first."
             )
+        
+        # Create a new post for this test to avoid conflicts
+        post_data = {
+            "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",  # Different URL
+            "squadId": self.test_squad_id,
+            "userId": self.test_user_id
+        }
+        
+        post_response = self.make_request('POST', '/posts', post_data, auth_required=True)
+        if not post_response or post_response.status_code != 200:
+            return self.log_test(
+                "Enhanced Engagement System (Setup)", 
+                False, 
+                "Failed to create test post for engagement testing"
+            )
+        
+        test_post_id = post_response.json()['id']
         
         # Test 1: Track engagement click
         click_data = {
-            "postId": self.test_post_id,
+            "postId": test_post_id,
             "userId": self.test_user_id,
             "type": "like",
-            "redirectUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            "redirectUrl": "https://www.youtube.com/watch?v=jNQXAC9IVRw"
         }
         
         click_response = self.make_request('POST', '/engagements/click', click_data, auth_required=True)
@@ -895,7 +912,7 @@ class CreatorSquadAPITester:
         
         # Test 2: Verify engagement and award credits
         verify_data = {
-            "postId": self.test_post_id,
+            "postId": test_post_id,
             "userId": self.test_user_id,
             "type": "like",
             "verificationData": {"platform": "youtube", "verified": True}
