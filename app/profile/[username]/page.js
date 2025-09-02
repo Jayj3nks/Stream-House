@@ -129,7 +129,7 @@ export default function ProfilePage({ params }) {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Squad
             </Button>
-            <h1 className="text-2xl font-bold text-purple-600">Profile</h1>
+            <h1 className="text-2xl font-bold text-purple-600">Creator Profile</h1>
           </div>
         </div>
       </header>
