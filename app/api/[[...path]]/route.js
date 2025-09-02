@@ -1221,6 +1221,34 @@ async function handleRoute(request, { params }) {
       }))
     }
 
+    // MEDIA UPLOAD ENDPOINTS
+
+    // Upload media (profile pictures, screenshots)
+    if (route === '/media/upload' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      
+      // For now, simulate file upload by returning a placeholder URL
+      // In production, this would handle actual file upload to cloud storage
+      const mediaUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${tokenData.userId}`
+      
+      const media = await mediaRepo.create({
+        userId: tokenData.userId,
+        filename: 'profile-picture.jpg',
+        contentType: 'image/jpeg',
+        size: 1024,
+        url: mediaUrl
+      })
+      
+      // Update user's avatar URL
+      await userRepo.setAvatar(tokenData.userId, mediaUrl)
+      
+      return handleCORS(NextResponse.json({
+        url: mediaUrl,
+        id: media.id,
+        message: "Media uploaded successfully"
+      }))
+    }
+
     // Legacy compatibility routes (keep existing squad routes working)
     if (route === '/squads' && method === 'POST') {
       // Redirect to houses
