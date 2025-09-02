@@ -140,9 +140,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-purple-600">Join Streamer House</CardTitle>
+          <CardTitle className="text-2xl font-bold text-purple-600">Create Account</CardTitle>
           <CardDescription>
-            Step {step} of 4 - Create your detailed creator profile
+            Step {step} of 4 - Set up your creator profile
           </CardDescription>
           <div className="flex justify-center mt-4">
             {[1, 2, 3, 4].map((stepNum) => (
