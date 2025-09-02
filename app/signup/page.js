@@ -367,7 +367,7 @@ export default function SignupPage() {
               </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={loading} className="ml-auto">
-                {loading ? "Creating Account..." : "Complete Signup"}
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             )}
           </div>
