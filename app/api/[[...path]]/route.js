@@ -17,7 +17,7 @@ import {
   clipRepo
 } from '../../../lib/repositories/memory/index.js'
 
-// Global Configuration
+// Global Configuration for Streamer House
 const CONFIG = {
   TIMEZONE: process.env.CSQ_TIMEZONE || 'America/New_York',
   ENGAGE_DEDUP_HOURS: parseInt(process.env.CSQ_ENGAGE_DEDUP_HOURS) || 24,
@@ -27,50 +27,6 @@ const CONFIG = {
   ALLOWED_MIME: (process.env.CSQ_ALLOWED_MIME || 'video/mp4,video/webm,video/quicktime').split(','),
   ENGAGE_RATE_LIMIT: parseInt(process.env.CSQ_ENGAGE_RATE_LIMIT) || 20,
   WRITE_RATE_LIMIT: parseInt(process.env.CSQ_WRITE_RATE_LIMIT) || 10
-}
-
-// MongoDB connection
-let client
-let db
-
-async function connectToMongo() {
-  if (!client) {
-    client = new MongoClient(process.env.MONGO_URL)
-    await client.connect()
-    db = client.db(process.env.DB_NAME)
-    
-    // Ensure indexes exist
-    await ensureIndexes()
-  }
-  return db
-}
-
-async function ensureIndexes() {
-  try {
-    // User indexes
-    await db.collection('users').createIndex({ username: 1 }, { unique: true })
-    await db.collection('users').createIndex({ email: 1 }, { unique: true })
-    
-    // Post indexes
-    await db.collection('posts').createIndex({ ownerUserId: 1 })
-    await db.collection('posts').createIndex({ createdAt: -1 })
-    
-    // Clip indexes
-    await db.collection('clips').createIndex({ postId: 1 })
-    await db.collection('clips').createIndex({ creatorUserId: 1 })
-    
-    // Engagement indexes
-    await db.collection('engagements').createIndex({ userId: 1, postId: 1, type: 1, createdAt: 1 })
-    
-    // PostCollaborator indexes
-    await db.collection('post_collaborators').createIndex({ postId: 1, userId: 1 }, { unique: true })
-    
-    // Rate limiting indexes
-    await db.collection('rate_limits').createIndex({ key: 1 })
-    await db.collection('rate_limits').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
-  } catch (error) {
-    console.error('Index creation error:', error)
-  }
 }
 
 // Rate limiting implementation
@@ -85,16 +41,13 @@ async function checkRateLimit(key, limit, windowMs = 60000) {
   }
   
   const requests = rateLimiters.get(key)
-  
-  // Remove old requests outside the window
   const validRequests = requests.filter(timestamp => timestamp > windowStart)
   rateLimiters.set(key, validRequests)
   
   if (validRequests.length >= limit) {
-    return false // Rate limit exceeded
+    return false
   }
   
-  // Add current request
   validRequests.push(now)
   return true
 }
@@ -118,7 +71,6 @@ function canonicalizeUrl(originalUrl, provider) {
     
     switch (provider.toLowerCase()) {
       case 'youtube':
-        // Extract video ID from various YouTube URL formats
         let videoId = null
         if (url.hostname.includes('youtu.be')) {
           videoId = url.pathname.slice(1).split('?')[0]
@@ -132,13 +84,11 @@ function canonicalizeUrl(originalUrl, provider) {
         break
         
       case 'tiktok':
-        // Keep TikTok URLs but clean tracking params
         const tiktokCleanUrl = new URL(originalUrl)
-        tiktokCleanUrl.search = '' // Remove all query params
+        tiktokCleanUrl.search = ''
         return tiktokCleanUrl.toString()
         
       default:
-        // For other platforms, strip common tracking params
         const cleanUrl = new URL(originalUrl)
         const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid']
         trackingParams.forEach(param => cleanUrl.searchParams.delete(param))
@@ -148,31 +98,17 @@ function canonicalizeUrl(originalUrl, provider) {
     console.error('URL canonicalization error:', error)
   }
   
-  // Fallback to original URL if canonicalization fails
   return originalUrl
 }
 
-// Enhanced URL metadata fetching with security and caching
+// Enhanced URL metadata fetching
 async function fetchUrlMetadata(url) {
   try {
-    const db = await connectToMongo()
-    
-    // Check cache first (respect cache expiration)
-    const cacheExpiry = new Date(Date.now() - CONFIG.URL_CACHE_DAYS * 24 * 60 * 60 * 1000)
-    const cached = await db.collection('url_metadata').findOne({ 
-      url, 
-      cachedAt: { $gt: cacheExpiry }
-    })
-    
-    if (cached) {
-      return cached.metadata
-    }
-
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'CreatorSquad-Bot/2.0 (+https://creatorsquad.com)'
+        'User-Agent': 'StreamerHouse-Bot/1.0 (+https://streamerhouse.com)'
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 10000
     })
     
     if (!response.ok) {
@@ -182,22 +118,17 @@ async function fetchUrlMetadata(url) {
     const html = await response.text()
     const $ = cheerio.load(html)
     
-    // Extract metadata with XSS protection
     const title = sanitizeText($('title').text() || 
                   $('meta[property="og:title"]').attr('content') || 
-                  $('meta[name="twitter:title"]').attr('content') || 
                   'Untitled')
     
     const description = sanitizeText($('meta[property="og:description"]').attr('content') || 
-                       $('meta[name="twitter:description"]').attr('content') || 
                        $('meta[name="description"]').attr('content') || 
                        '')
     
-    const thumbnail = $('meta[property="og:image"]').attr('content') || 
-                     $('meta[name="twitter:image"]').attr('content') || 
-                     ''
+    const thumbnail = $('meta[property="og:image"]').attr('content') || ''
     
-    // Enhanced platform detection
+    // Platform detection
     let provider = 'unknown'
     let platformIcon = '🔗'
     
@@ -209,27 +140,17 @@ async function fetchUrlMetadata(url) {
     } else if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
       provider = 'youtube'
       platformIcon = '📺'
-    } else if (hostname.includes('instagram.com')) {
-      provider = 'instagram'
-      platformIcon = '📷'
     } else if (hostname.includes('twitch.tv')) {
       provider = 'twitch'
       platformIcon = '🎮'
-    } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
-      provider = 'twitter'
-      platformIcon = '🐦'
-    } else if (hostname.includes('facebook.com') || hostname.includes('fb.watch')) {
-      provider = 'facebook'
-      platformIcon = '👥'
-    } else if (hostname.includes('kik.com')) {
-      provider = 'kik'
-      platformIcon = '💬'
+    } else if (hostname.includes('instagram.com')) {
+      provider = 'instagram'
+      platformIcon = '📷'
     }
 
-    // Canonicalize URL with fallback
     const canonicalUrl = canonicalizeUrl(url, provider) || url
 
-    const metadata = { 
+    return { 
       title: title.slice(0, 200), 
       description: description.slice(0, 500),
       thumbnailUrl: thumbnail, 
@@ -238,25 +159,9 @@ async function fetchUrlMetadata(url) {
       canonicalUrl,
       originalUrl: url
     }
-
-    // Cache the result
-    await db.collection('url_metadata').updateOne(
-      { url },
-      { 
-        $set: { 
-          url, 
-          metadata, 
-          cachedAt: new Date() 
-        } 
-      },
-      { upsert: true }
-    )
-
-    return metadata
   } catch (error) {
     console.error('Error fetching URL metadata:', error)
     
-    // Return fallback metadata with canonicalized URL
     const provider = 'unknown'
     return { 
       title: 'Content Post', 
@@ -270,19 +175,14 @@ async function fetchUrlMetadata(url) {
   }
 }
 
-// XSS protection for text content
+// XSS protection
 function sanitizeText(text) {
   if (!text) return ''
   return text
-    .replace(/[<>]/g, '') // Remove angle brackets
-    .replace(/javascript:/gi, '') // Remove javascript: urls
-    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
     .trim()
-}
-
-// Helper to generate secure verification codes
-function generateVerificationCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 // Helper function to handle CORS
@@ -295,7 +195,7 @@ function handleCORS(response) {
 }
 
 // JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'creator-squad-v2-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
 // Helper to verify JWT token
 function verifyToken(request) {
@@ -319,21 +219,6 @@ function getClientIP(request) {
          '127.0.0.1'
 }
 
-// Check engagement deduplication (24-hour sliding window)
-async function checkEngagementDedup(userId, postId, type) {
-  const db = await connectToMongo()
-  const windowStart = new Date(Date.now() - CONFIG.ENGAGE_DEDUP_HOURS * 60 * 60 * 1000)
-  
-  const existingEngagement = await db.collection('engagements').findOne({
-    userId,
-    postId,
-    type,
-    createdAt: { $gt: windowStart }
-  })
-  
-  return !existingEngagement // Return true if no recent engagement found
-}
-
 // OPTIONS handler for CORS
 export async function OPTIONS() {
   return handleCORS(new NextResponse(null, { status: 200 }))
@@ -346,31 +231,23 @@ async function handleRoute(request, { params }) {
   const method = request.method
 
   try {
-    const db = await connectToMongo()
-
-    // Root endpoint with config info
+    // Root endpoint
     if (route === '/' && method === 'GET') {
       return handleCORS(NextResponse.json({ 
-        message: "CreatorSquad V2 API",
-        version: "2.0.0",
-        timezone: CONFIG.TIMEZONE,
-        config: {
-          engageDedup: `${CONFIG.ENGAGE_DEDUP_HOURS}h`,
-          urlCache: `${CONFIG.URL_CACHE_DAYS}d`,
-          maxClipSize: `${CONFIG.MAX_CLIP_MB}MB`
-        }
+        message: "Streamer House API",
+        version: "1.0.0",
+        timezone: CONFIG.TIMEZONE
       }))
     }
 
     // AUTH ROUTES
     
-    // Enhanced signup with extended profile
+    // Enhanced signup
     if (route === '/auth/signup' && method === 'POST') {
-      // Rate limiting for signup
       const clientIP = getClientIP(request)
       const rateLimitKey = `signup:${clientIP}`
       
-      if (!await checkRateLimit(rateLimitKey, 5, 300000)) { // 5 signups per 5 minutes
+      if (!await checkRateLimit(rateLimitKey, 5, 300000)) {
         return handleCORS(NextResponse.json(
           { error: "Rate limit exceeded" }, 
           { status: 429 }
@@ -391,7 +268,6 @@ async function handleRoute(request, { params }) {
         bio = '' 
       } = await request.json()
       
-      // Validation
       if (!email || !password || !displayName) {
         return handleCORS(NextResponse.json(
           { error: "Email, password, and display name are required" }, 
@@ -407,7 +283,7 @@ async function handleRoute(request, { params }) {
       }
 
       // Check if user exists
-      const existingUser = await db.collection('users').findOne({ email })
+      const existingUser = await userRepo.getByEmail(email)
       if (existingUser) {
         return handleCORS(NextResponse.json(
           { error: "User already exists" }, 
@@ -420,7 +296,7 @@ async function handleRoute(request, { params }) {
       let username = baseUsername
       let counter = 1
       
-      while (await db.collection('users').findOne({ username })) {
+      while (await userRepo.getByUsername(username)) {
         username = `${baseUsername}${counter}`
         counter++
       }
@@ -429,13 +305,12 @@ async function handleRoute(request, { params }) {
       const passwordHash = await bcrypt.hash(password, 12)
 
       // Create user
-      const user = {
-        id: uuidv4(),
+      const user = await userRepo.create({
         username,
         email,
         passwordHash,
         displayName: sanitizeText(displayName),
-        platforms: platforms.slice(0, 10), // Limit array size
+        platforms: platforms.slice(0, 10),
         niches: niches.slice(0, 10),
         games: games.slice(0, 20),
         city: sanitizeText(city),
@@ -443,12 +318,8 @@ async function handleRoute(request, { params }) {
         hasSchedule,
         schedule,
         bio: sanitizeText(bio).slice(0, 500),
-        avatarUrl: null,
-        totalPoints: 0,
-        createdAt: new Date()
-      }
-
-      await db.collection('users').insertOne(user)
+        totalPoints: 0
+      })
 
       // Create JWT token
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
@@ -471,8 +342,7 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Find user
-      const user = await db.collection('users').findOne({ email })
+      const user = await userRepo.getByEmail(email)
       if (!user) {
         return handleCORS(NextResponse.json(
           { error: "Invalid credentials" }, 
@@ -480,7 +350,6 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Check password
       const isValidPassword = await bcrypt.compare(password, user.passwordHash)
       if (!isValidPassword) {
         return handleCORS(NextResponse.json(
@@ -489,7 +358,6 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Create JWT token
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
 
       const { passwordHash: _, ...userWithoutPassword } = user
@@ -502,7 +370,7 @@ async function handleRoute(request, { params }) {
     // Get current user
     if (route === '/auth/me' && method === 'GET') {
       const tokenData = verifyToken(request)
-      const user = await db.collection('users').findOne({ id: tokenData.userId })
+      const user = await userRepo.getById(tokenData.userId)
       
       if (!user) {
         return handleCORS(NextResponse.json(
@@ -515,13 +383,75 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(userWithoutPassword))
     }
 
-    // POST SYSTEM
+    // HOUSE SYSTEM (replaces Squads)
 
-    // Create post with enhanced metadata and security
+    // Create house
+    if (route === '/houses' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      
+      const rateLimitKey = `houses:${tokenData.userId}`
+      if (!await checkRateLimit(rateLimitKey, CONFIG.WRITE_RATE_LIMIT)) {
+        return handleCORS(NextResponse.json(
+          { error: "Rate limit exceeded" }, 
+          { status: 429 }
+        ))
+      }
+
+      const { name } = await request.json()
+      
+      if (!name) {
+        return handleCORS(NextResponse.json(
+          { error: "House name is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      const house = await houseRepo.create({
+        name: sanitizeText(name),
+        ownerId: tokenData.userId,
+        memberCount: 1,
+        visibility: 'private'
+      })
+
+      return handleCORS(NextResponse.json(house))
+    }
+
+    // Get user's house
+    if (route.startsWith('/houses/user/') && method === 'GET') {
+      const userId = route.split('/')[3]
+      const house = await houseRepo.getByUserId(userId)
+      
+      if (house) {
+        const members = await houseRepo.listMembers(house.id)
+        house.members = members.map(m => ({ id: m.id, displayName: m.displayName, username: m.username }))
+      }
+      
+      return handleCORS(NextResponse.json(house))
+    }
+
+    // Leave house
+    if (route.match(/^\/houses\/[^\/]+\/leave$/) && method === 'POST') {
+      const houseId = route.split('/')[2]
+      const tokenData = verifyToken(request)
+      
+      const success = await houseRepo.leave(houseId, tokenData.userId)
+      
+      if (success) {
+        return handleCORS(NextResponse.json({ message: "Left house successfully" }))
+      } else {
+        return handleCORS(NextResponse.json(
+          { error: "Failed to leave house" }, 
+          { status: 400 }
+        ))
+      }
+    }
+
+    // POST SYSTEM WITH DELETE AND VISIBILITY RULES
+
+    // Create post
     if (route === '/posts' && method === 'POST') {
       const tokenData = verifyToken(request)
       
-      // Rate limiting for post creation
       const rateLimitKey = `posts:${tokenData.userId}`
       if (!await checkRateLimit(rateLimitKey, CONFIG.WRITE_RATE_LIMIT)) {
         return handleCORS(NextResponse.json(
@@ -530,7 +460,7 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      const { url, squadId } = await request.json()
+      const { url, houseId } = await request.json()
       
       if (!url) {
         return handleCORS(NextResponse.json(
@@ -539,7 +469,6 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Validate URL format
       try {
         new URL(url)
       } catch {
@@ -549,10 +478,8 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Fetch metadata with enhanced security
       const metadata = await fetchUrlMetadata(url)
 
-      // Security check: ensure canonical URL is in allowlist
       if (!isDomainAllowed(metadata.canonicalUrl)) {
         return handleCORS(NextResponse.json(
           { error: "URL domain not allowed" }, 
@@ -560,41 +487,35 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Get user info
-      const user = await db.collection('users').findOne({ id: tokenData.userId })
+      const user = await userRepo.getById(tokenData.userId)
 
-      const post = {
-        id: uuidv4(),
+      const post = await postRepo.create({
         ownerUserId: tokenData.userId,
-        squadId: squadId || null,
+        houseId: houseId || null,
         provider: metadata.provider,
         originalUrl: metadata.originalUrl,
         canonicalUrl: metadata.canonicalUrl,
         title: metadata.title,
         description: metadata.description,
         thumbnailUrl: metadata.thumbnailUrl,
-        isCollaboration: false,
-        createdAt: new Date(),
         // Legacy compatibility
         authorName: user?.displayName || 'Unknown',
         platform: metadata.provider,
         platformIcon: metadata.platformIcon
-      }
-
-      await db.collection('posts').insertOne(post)
+      })
       
       // Get clip count
-      const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
-      post.clipCount = clipCount
+      const clips = await clipRepo.listByPost(post.id)
+      post.clipCount = clips.length
 
       return handleCORS(NextResponse.json(post))
     }
 
-    // Get single post with clip count
+    // Get single post
     if (route.startsWith('/posts/') && !route.includes('/collaborators') && !route.includes('/clips') && method === 'GET') {
       const postId = route.split('/')[2]
       
-      const post = await db.collection('posts').findOne({ id: postId })
+      const post = await postRepo.getById(postId)
       if (!post) {
         return handleCORS(NextResponse.json(
           { error: "Post not found" }, 
@@ -602,236 +523,51 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Get clip count
-      const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
-      post.clipCount = clipCount
-
-      // Get collaborators if collaboration
-      if (post.isCollaboration) {
-        const collaborators = await db.collection('post_collaborators')
-          .find({ postId: post.id })
-          .toArray()
-        
-        const collaboratorIds = collaborators.map(c => c.userId)
-        const users = await db.collection('users')
-          .find({ id: { $in: collaboratorIds } })
-          .project({ id: 1, displayName: 1, username: 1 })
-          .toArray()
-        
-        post.collaborators = users
-      }
+      const clips = await clipRepo.listByPost(post.id)
+      post.clipCount = clips.length
 
       return handleCORS(NextResponse.json(post))
     }
 
-    // Get squad posts
-    if (route.startsWith('/posts/squad/') && method === 'GET') {
-      const squadId = route.split('/')[3]
+    // Delete post (owner only)
+    if (route.startsWith('/posts/') && method === 'DELETE') {
+      const postId = route.split('/')[2]
+      const tokenData = verifyToken(request)
       
-      const posts = await db.collection('posts')
-        .find({ squadId })
-        .sort({ createdAt: -1 })
-        .limit(50)
-        .toArray()
+      const success = await postRepo.delete(postId, tokenData.userId)
+      
+      if (success) {
+        return handleCORS(NextResponse.json({ message: "Post deleted successfully" }))
+      } else {
+        return handleCORS(NextResponse.json(
+          { error: "Not authorized to delete this post" }, 
+          { status: 403 }
+        ))
+      }
+    }
 
+    // Get house feed with visibility rules
+    if (route.match(/^\/house\/[^\/]+\/feed$/) && method === 'GET') {
+      const houseId = route.split('/')[2]
+      
+      const posts = await postRepo.listByHouse(houseId, { limit: 50 })
+      
       // Add clip counts
       for (let post of posts) {
-        const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
-        post.clipCount = clipCount
+        const clips = await clipRepo.listByPost(post.id)
+        post.clipCount = clips.length
       }
 
       return handleCORS(NextResponse.json(posts))
     }
 
-    // ENGAGE SYSTEM WITH SECURITY
+    // COLLABORATORS WITH DROPDOWN
 
-    // Engage redirect with enhanced security and rate limiting
-    if (route.startsWith('/r/') && method === 'GET') {
-      const postId = route.split('/')[2]
-      const url = new URL(request.url)
-      const userId = url.searchParams.get('u')
-
-      // Rate limiting for engage endpoints
-      const clientIP = getClientIP(request)
-      const rateLimitKey = `engage:${clientIP}:${userId}`
-      
-      if (!await checkRateLimit(rateLimitKey, CONFIG.ENGAGE_RATE_LIMIT)) {
-        return handleCORS(NextResponse.json(
-          { error: "Rate limit exceeded" }, 
-          { status: 429 }
-        ))
-      }
-
-      if (!userId) {
-        return handleCORS(NextResponse.json(
-          { error: "User ID is required" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Get post
-      const post = await db.collection('posts').findOne({ id: postId })
-      if (!post) {
-        return handleCORS(NextResponse.json(
-          { error: "Post not found" }, 
-          { status: 404 }
-        ))
-      }
-
-      // Security: Verify canonical URL is in allowlist
-      if (!isDomainAllowed(post.canonicalUrl)) {
-        return handleCORS(NextResponse.json(
-          { error: "Redirect URL not allowed" }, 
-          { status: 403 }
-        ))
-      }
-
-      // Check 24-hour deduplication
-      const canEngage = await checkEngagementDedup(userId, postId, 'engage')
-
-      if (canEngage) {
-        // Award 1 point for engagement
-        const engagement = {
-          id: uuidv4(),
-          userId,
-          postId,
-          type: 'engage',
-          points: 1,
-          createdAt: new Date()
-        }
-
-        await db.collection('engagements').insertOne(engagement)
-
-        // Update user total points
-        await db.collection('users').updateOne(
-          { id: userId },
-          { $inc: { totalPoints: 1 } }
-        )
-      }
-
-      // Always redirect (points awarded only if dedup allows)
-      return Response.redirect(post.canonicalUrl, 302)
-    }
-
-    // CLIPS SYSTEM WITH VALIDATION
-
-    // Create clip with file validation
-    if (route === '/clips' && method === 'POST') {
-      const tokenData = verifyToken(request)
-      
-      // Rate limiting
-      const rateLimitKey = `clips:${tokenData.userId}`
-      if (!await checkRateLimit(rateLimitKey, CONFIG.WRITE_RATE_LIMIT)) {
-        return handleCORS(NextResponse.json(
-          { error: "Rate limit exceeded" }, 
-          { status: 429 }
-        ))
-      }
-
-      const { postId, clipUrl, source = 'url' } = await request.json()
-      
-      if (!postId || (!clipUrl && source === 'url')) {
-        return handleCORS(NextResponse.json(
-          { error: "Post ID and clip URL are required" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Verify post exists and user doesn't own it
-      const post = await db.collection('posts').findOne({ id: postId })
-      if (!post) {
-        return handleCORS(NextResponse.json(
-          { error: "Post not found" }, 
-          { status: 404 }
-        ))
-      }
-
-      if (post.ownerUserId === tokenData.userId) {
-        return handleCORS(NextResponse.json(
-          { error: "Cannot create clip of your own post" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Check for duplicate clip URL
-      const existingClip = await db.collection('clips').findOne({ 
-        postId, 
-        creatorUserId: tokenData.userId,
-        clipUrl 
-      })
-
-      if (existingClip) {
-        return handleCORS(NextResponse.json(
-          { error: "Clip already exists" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Create clip
-      const clip = {
-        id: uuidv4(),
-        postId,
-        creatorUserId: tokenData.userId,
-        source,
-        clipUrl: source === 'url' ? clipUrl : null,
-        storagePath: null,
-        thumbnailUrl: null,
-        createdAt: new Date()
-      }
-
-      await db.collection('clips').insertOne(clip)
-
-      // Award 2 points for creating clip
-      const engagement = {
-        id: uuidv4(),
-        userId: tokenData.userId,
-        postId,
-        type: 'clip',
-        points: 2,
-        createdAt: new Date()
-      }
-
-      await db.collection('engagements').insertOne(engagement)
-
-      // Update user total points
-      await db.collection('users').updateOne(
-        { id: tokenData.userId },
-        { $inc: { totalPoints: 2 } }
-      )
-
-      return handleCORS(NextResponse.json({ 
-        clip, 
-        pointsAwarded: 2 
-      }))
-    }
-
-    // Get clips for post
-    if (route.match(/^\/posts\/[^\/]+\/clips$/) && method === 'GET') {
-      const postId = route.split('/')[2]
-      
-      const clips = await db.collection('clips')
-        .find({ postId })
-        .sort({ createdAt: -1 })
-        .toArray()
-
-      // Get creator info
-      for (let clip of clips) {
-        const creator = await db.collection('users')
-          .findOne({ id: clip.creatorUserId }, { projection: { displayName: 1, username: 1 } })
-        clip.creator = creator
-      }
-
-      return handleCORS(NextResponse.json(clips))
-    }
-
-    // COLLABORATION SYSTEM WITH PERMISSIONS
-
-    // Add collaborators with owner-only access
+    // Add collaborators (house members dropdown)
     if (route.match(/^\/posts\/[^\/]+\/collaborators$/) && method === 'POST') {
       const postId = route.split('/')[2]
       const tokenData = verifyToken(request)
       
-      // Rate limiting
       const rateLimitKey = `collab:${tokenData.userId}`
       if (!await checkRateLimit(rateLimitKey, CONFIG.WRITE_RATE_LIMIT)) {
         return handleCORS(NextResponse.json(
@@ -849,8 +585,7 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Verify post exists and user owns it
-      const post = await db.collection('posts').findOne({ id: postId })
+      const post = await postRepo.getById(postId)
       if (!post) {
         return handleCORS(NextResponse.json(
           { error: "Post not found" }, 
@@ -858,7 +593,8 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      if (post.ownerUserId !== tokenData.userId) {
+      const isOwner = await postRepo.isOwner(postId, tokenData.userId)
+      if (!isOwner) {
         return handleCORS(NextResponse.json(
           { error: "Only post owner can add collaborators" }, 
           { status: 403 }
@@ -866,49 +602,26 @@ async function handleRoute(request, { params }) {
       }
 
       const wasCollaboration = post.isCollaboration
-      const allCollaborators = [...new Set([post.ownerUserId, ...collaboratorUserIds])]
+      const allCollaborators = [post.ownerUserId, ...collaboratorUserIds]
       
-      // Add collaborators
-      for (const userId of allCollaborators) {
-        await db.collection('post_collaborators').updateOne(
-          { postId, userId },
-          { 
-            $set: { 
-              id: uuidv4(),
-              postId, 
-              userId, 
-              createdAt: new Date() 
-            } 
-          },
-          { upsert: true }
-        )
-      }
-
-      // Mark as collaboration
-      await db.collection('posts').updateOne(
-        { id: postId },
-        { $set: { isCollaboration: true } }
-      )
+      await postRepo.addCollaborators(postId, allCollaborators)
 
       // Award points only on first collaboration marking
       if (!wasCollaboration) {
         for (const userId of allCollaborators) {
-          const engagement = {
-            id: uuidv4(),
+          await engagementRepo.create({
             userId,
             postId,
             type: 'collab',
-            points: 3,
-            createdAt: new Date()
+            points: 3
+          })
+
+          const user = await userRepo.getById(userId)
+          if (user) {
+            await userRepo.update(userId, { 
+              totalPoints: (user.totalPoints || 0) + 3 
+            })
           }
-
-          await db.collection('engagements').insertOne(engagement)
-
-          // Update user total points
-          await db.collection('users').updateOne(
-            { id: userId },
-            { $inc: { totalPoints: 3 } }
-          )
         }
       }
 
@@ -919,13 +632,369 @@ async function handleRoute(request, { params }) {
       }))
     }
 
-    // ENHANCED USER PROFILES
+    // ENGAGE SYSTEM
 
-    // Get comprehensive user profile
-    if (route.startsWith('/users/') && !route.includes('/posts') && !route.includes('/clips') && method === 'GET') {
+    // Engage redirect
+    if (route.startsWith('/r/') && method === 'GET') {
+      const postId = route.split('/')[2]
+      const url = new URL(request.url)
+      const userId = url.searchParams.get('u')
+
+      const clientIP = getClientIP(request)
+      const rateLimitKey = `engage:${clientIP}:${userId}`
+      
+      if (!await checkRateLimit(rateLimitKey, CONFIG.ENGAGE_RATE_LIMIT)) {
+        return handleCORS(NextResponse.json(
+          { error: "Rate limit exceeded" }, 
+          { status: 429 }
+        ))
+      }
+
+      if (!userId) {
+        return handleCORS(NextResponse.json(
+          { error: "User ID is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      const post = await postRepo.getById(postId)
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      if (!isDomainAllowed(post.canonicalUrl)) {
+        return handleCORS(NextResponse.json(
+          { error: "Redirect URL not allowed" }, 
+          { status: 403 }
+        ))
+      }
+
+      // Check deduplication and award points if eligible
+      const canEngage = await engagementRepo.checkDedup(userId, postId, 'engage', CONFIG.ENGAGE_DEDUP_HOURS)
+
+      if (canEngage) {
+        await engagementRepo.create({
+          userId,
+          postId,
+          type: 'engage',
+          points: 1
+        })
+
+        const user = await userRepo.getById(userId)
+        if (user) {
+          await userRepo.update(userId, { 
+            totalPoints: (user.totalPoints || 0) + 1 
+          })
+        }
+      }
+
+      return Response.redirect(post.canonicalUrl, 302)
+    }
+
+    // CLIPS SYSTEM
+
+    // Create clip
+    if (route === '/clips' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      
+      const rateLimitKey = `clips:${tokenData.userId}`
+      if (!await checkRateLimit(rateLimitKey, CONFIG.WRITE_RATE_LIMIT)) {
+        return handleCORS(NextResponse.json(
+          { error: "Rate limit exceeded" }, 
+          { status: 429 }
+        ))
+      }
+
+      const { postId, clipUrl, source = 'url' } = await request.json()
+      
+      if (!postId || (!clipUrl && source === 'url')) {
+        return handleCORS(NextResponse.json(
+          { error: "Post ID and clip URL are required" }, 
+          { status: 400 }
+        ))
+      }
+
+      const post = await postRepo.getById(postId)
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      if (post.ownerUserId === tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Cannot create clip of your own post" }, 
+          { status: 400 }
+        ))
+      }
+
+      const clip = await clipRepo.create({
+        postId,
+        creatorUserId: tokenData.userId,
+        source,
+        clipUrl: source === 'url' ? clipUrl : null,
+        storagePath: null,
+        thumbnailUrl: null
+      })
+
+      await engagementRepo.create({
+        userId: tokenData.userId,
+        postId,
+        type: 'clip',
+        points: 2
+      })
+
+      const user = await userRepo.getById(tokenData.userId)
+      if (user) {
+        await userRepo.update(tokenData.userId, { 
+          totalPoints: (user.totalPoints || 0) + 2 
+        })
+      }
+
+      return handleCORS(NextResponse.json({ 
+        clip, 
+        pointsAwarded: 2 
+      }))
+    }
+
+    // Get clips for post
+    if (route.match(/^\/posts\/[^\/]+\/clips$/) && method === 'GET') {
+      const postId = route.split('/')[2]
+      
+      const clips = await clipRepo.listByPost(postId)
+
+      // Add creator info
+      for (let clip of clips) {
+        const creator = await userRepo.getById(clip.creatorUserId)
+        if (creator) {
+          clip.creator = { 
+            displayName: creator.displayName, 
+            username: creator.username 
+          }
+        }
+      }
+
+      return handleCORS(NextResponse.json(clips))
+    }
+
+    // SILENT KICK VOTE SYSTEM
+
+    // Create kick proposal
+    if (route.match(/^\/houses\/[^\/]+\/votes\/kick$/) && method === 'POST') {
+      const houseId = route.split('/')[2]
+      const tokenData = verifyToken(request)
+      
+      const { targetUserId, reason } = await request.json()
+      
+      if (!targetUserId) {
+        return handleCORS(NextResponse.json(
+          { error: "Target user ID is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Verify both users are house members
+      const isMember = await houseRepo.isMember(houseId, tokenData.userId)
+      const isTargetMember = await houseRepo.isMember(houseId, targetUserId)
+      
+      if (!isMember || !isTargetMember) {
+        return handleCORS(NextResponse.json(
+          { error: "Both users must be house members" }, 
+          { status: 403 }
+        ))
+      }
+
+      const proposal = await voteRepo.createKickProposal(houseId, targetUserId, tokenData.userId, reason)
+      
+      return handleCORS(NextResponse.json({ 
+        proposalId: proposal.id 
+      }))
+    }
+
+    // Vote on kick proposal
+    if (route.match(/^\/houses\/[^\/]+\/votes\/[^\/]+$/) && method === 'POST') {
+      const houseId = route.split('/')[2]
+      const proposalId = route.split('/')[4]
+      const tokenData = verifyToken(request)
+      
+      const { vote } = await request.json()
+      
+      if (!['yes', 'no'].includes(vote)) {
+        return handleCORS(NextResponse.json(
+          { error: "Vote must be 'yes' or 'no'" }, 
+          { status: 400 }
+        ))
+      }
+
+      const canVote = await voteRepo.canVote(proposalId, tokenData.userId)
+      if (!canVote) {
+        return handleCORS(NextResponse.json(
+          { error: "Cannot vote on this proposal" }, 
+          { status: 403 }
+        ))
+      }
+
+      const success = await voteRepo.vote(proposalId, tokenData.userId, vote)
+      
+      if (success) {
+        return handleCORS(NextResponse.json({ message: "Vote recorded" }))
+      } else {
+        return handleCORS(NextResponse.json(
+          { error: "Failed to record vote" }, 
+          { status: 400 }
+        ))
+      }
+    }
+
+    // Get vote proposal status
+    if (route.match(/^\/houses\/[^\/]+\/votes\/[^\/]+$/) && method === 'GET') {
+      const proposalId = route.split('/')[4]
+      const tokenData = verifyToken(request)
+      
+      const proposal = await voteRepo.getProposal(proposalId)
+      if (!proposal) {
+        return handleCORS(NextResponse.json(
+          { error: "Proposal not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Don't show proposal to target user
+      if (proposal.targetUserId === tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Not authorized to view this proposal" }, 
+          { status: 403 }
+        ))
+      }
+
+      const tally = await voteRepo.tally(proposalId)
+      
+      // Execute if expired and hasn't been executed
+      if (new Date() > proposal.expiresAt && !proposal.executed) {
+        await voteRepo.executeKick(proposalId)
+      }
+
+      return handleCORS(NextResponse.json({
+        id: proposal.id,
+        status: proposal.status,
+        expiresAt: proposal.expiresAt,
+        tally
+      }))
+    }
+
+    // INVITES SYSTEM
+
+    // Create invite
+    if (route.match(/^\/houses\/[^\/]+\/invites$/) && method === 'POST') {
+      const houseId = route.split('/')[2]
+      const tokenData = verifyToken(request)
+      
+      const { expiresInDays = 7, maxUses = 1 } = await request.json()
+      
+      const house = await houseRepo.getById(houseId)
+      if (!house) {
+        return handleCORS(NextResponse.json(
+          { error: "House not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Only owner can create invites for now
+      if (house.ownerId !== tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Only house owner can create invites" }, 
+          { status: 403 }
+        ))
+      }
+
+      const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+      
+      const invite = await inviteRepo.create({
+        houseId,
+        createdBy: tokenData.userId,
+        expiresAt,
+        maxUses: Math.min(maxUses, 10) // Cap at 10 uses
+      })
+
+      return handleCORS(NextResponse.json({
+        code: invite.code,
+        expiresAt: invite.expiresAt,
+        maxUses: invite.maxUses
+      }))
+    }
+
+    // Accept invite
+    if (route.match(/^\/invites\/[^\/]+\/accept$/) && method === 'POST') {
+      const code = route.split('/')[2]
+      const tokenData = verifyToken(request)
+      
+      const invite = await inviteRepo.getByCode(code)
+      if (!invite) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid or expired invite" }, 
+          { status: 400 }
+        ))
+      }
+
+      const success = await inviteRepo.accept(code, tokenData.userId)
+      if (!success) {
+        return handleCORS(NextResponse.json(
+          { error: "Cannot accept invite" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Add user to house
+      await houseRepo.addMember(invite.houseId, tokenData.userId)
+      
+      const house = await houseRepo.getById(invite.houseId)
+      
+      return handleCORS(NextResponse.json({
+        message: "Invite accepted",
+        house: { id: house.id, name: house.name }
+      }))
+    }
+
+    // FIND ROOMMATES (replaces Find Collabs)
+
+    // Get roommate search list
+    if (route === '/roommates' && method === 'GET') {
+      const url = new URL(request.url)
+      const filters = {
+        platforms: url.searchParams.get('platforms')?.split(','),
+        niches: url.searchParams.get('niches')?.split(','), 
+        region: url.searchParams.get('region')
+      }
+
+      const users = await userRepo.listForRoommateSearch(filters)
+      
+      // Remove sensitive data
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio,
+        platforms: user.platforms,
+        niches: user.niches,
+        city: user.city,
+        timeZone: user.timeZone
+      }))
+
+      return handleCORS(NextResponse.json(safeUsers))
+    }
+
+    // USER PROFILES
+
+    // Get user profile
+    if (route.startsWith('/users/') && !route.includes('/avatar') && method === 'GET') {
       const username = route.split('/')[2]
       
-      const user = await db.collection('users').findOne({ username })
+      const user = await userRepo.getByUsername(username)
       if (!user) {
         return handleCORS(NextResponse.json(
           { error: "User not found" }, 
@@ -933,174 +1002,160 @@ async function handleRoute(request, { params }) {
         ))
       }
 
-      // Get user's posts with clip counts
-      const posts = await db.collection('posts')
-        .find({ ownerUserId: user.id })
-        .sort({ createdAt: -1 })
-        .limit(20)
-        .toArray()
-
-      for (let post of posts) {
-        const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
-        post.clipCount = clipCount
+      // Get user's posts
+      const house = await houseRepo.getByUserId(user.id)
+      let posts = []
+      if (house) {
+        posts = await postRepo.listByHouse(house.id)
+        posts = posts.filter(post => post.ownerUserId === user.id)
+        
+        // Add clip counts
+        for (let post of posts) {
+          const clips = await clipRepo.listByPost(post.id)
+          post.clipCount = clips.length
+        }
       }
 
       // Get clips made by user
-      const clips = await db.collection('clips')
-        .find({ creatorUserId: user.id })
-        .sort({ createdAt: -1 })
-        .limit(20)
-        .toArray()
-
+      const clips = await clipRepo.listByCreator(user.id)
+      
       // Add original post info to clips
       for (let clip of clips) {
-        const originalPost = await db.collection('posts')
-          .findOne({ id: clip.postId }, { projection: { title: 1, thumbnailUrl: 1, provider: 1 } })
-        clip.originalPost = originalPost
+        const originalPost = await postRepo.getById(clip.postId)
+        if (originalPost) {
+          clip.originalPost = {
+            title: originalPost.title,
+            thumbnailUrl: originalPost.thumbnailUrl,
+            provider: originalPost.provider
+          }
+        }
       }
 
       // Get points breakdown
-      const pointsBreakdown = await db.collection('engagements').aggregate([
-        { $match: { userId: user.id } },
-        { $group: { _id: '$type', total: { $sum: '$points' }, count: { $sum: 1 } } }
-      ]).toArray()
+      const pointsBreakdown = await engagementRepo.getBreakdown(user.id)
 
-      const breakdown = pointsBreakdown.reduce((acc, item) => {
-        acc[item._id] = { total: item.total, count: item.count }
-        return acc
-      }, {})
-
-      // Remove sensitive data
       const { passwordHash, email, ...safeUser } = user
 
-      const profile = {
+      return handleCORS(NextResponse.json({
         user: safeUser,
         posts,
         clipsMade: clips,
-        pointsBreakdown: breakdown
-      }
-
-      return handleCORS(NextResponse.json(profile))
-    }
-
-    // Get user posts (paginated)
-    if (route.match(/^\/users\/[^\/]+\/posts$/) && method === 'GET') {
-      const username = route.split('/')[2]
-      const url = new URL(request.url)
-      const page = parseInt(url.searchParams.get('page')) || 1
-      const limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50)
-      const skip = (page - 1) * limit
-
-      const user = await db.collection('users').findOne({ username })
-      if (!user) {
-        return handleCORS(NextResponse.json(
-          { error: "User not found" }, 
-          { status: 404 }
-        ))
-      }
-
-      const posts = await db.collection('posts')
-        .find({ ownerUserId: user.id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray()
-
-      // Add clip counts
-      for (let post of posts) {
-        const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
-        post.clipCount = clipCount
-      }
-
-      const total = await db.collection('posts').countDocuments({ ownerUserId: user.id })
-
-      return handleCORS(NextResponse.json({
-        posts,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        }
+        pointsBreakdown
       }))
     }
 
-    // Get user clips (paginated)
-    if (route.match(/^\/users\/[^\/]+\/clips$/) && method === 'GET') {
-      const username = route.split('/')[2]
-      const url = new URL(request.url)
-      const page = parseInt(url.searchParams.get('page')) || 1
-      const limit = Math.min(parseInt(url.searchParams.get('limit')) || 20, 50)
-      const skip = (page - 1) * limit
+    // AVATAR SYSTEM
 
-      const user = await db.collection('users').findOne({ username })
-      if (!user) {
-        return handleCORS(NextResponse.json(
-          { error: "User not found" }, 
-          { status: 404 }
-        ))
-      }
-
-      const clips = await db.collection('clips')
-        .find({ creatorUserId: user.id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray()
-
-      // Add original post info
-      for (let clip of clips) {
-        const originalPost = await db.collection('posts')
-          .findOne({ id: clip.postId }, { projection: { title: 1, thumbnailUrl: 1, provider: 1 } })
-        clip.originalPost = originalPost
-      }
-
-      const total = await db.collection('clips').countDocuments({ creatorUserId: user.id })
-
-      return handleCORS(NextResponse.json({
-        clips,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      }))
-    }
-
-    // LEGACY COMPATIBILITY
-
-    // Keep existing squad routes for compatibility
-    if (route === '/squads' && method === 'POST') {
+    // Upload avatar
+    if (route === '/users/me/avatar' && method === 'POST') {
       const tokenData = verifyToken(request)
-      const { name, ownerId } = await request.json()
       
-      const squad = {
-        id: uuidv4(),
-        name,
-        ownerId,
-        members: [ownerId],
-        memberCount: 1,
-        createdAt: new Date(),
-        visibility: 'private'
+      // For now, return mock success since we don't have actual file upload
+      // In production, this would process multipart form data
+      
+      const mockAvatarUrl = `/api/avatars/${tokenData.userId}.jpg`
+      await userRepo.setAvatar(tokenData.userId, mockAvatarUrl)
+      
+      return handleCORS(NextResponse.json({
+        message: "Avatar uploaded successfully",
+        avatarUrl: mockAvatarUrl
+      }))
+    }
+
+    // Delete avatar
+    if (route === '/users/me/avatar' && method === 'DELETE') {
+      const tokenData = verifyToken(request)
+      
+      await userRepo.deleteAvatar(tokenData.userId)
+      
+      return handleCORS(NextResponse.json({
+        message: "Avatar deleted successfully"
+      }))
+    }
+
+    // Update roommate search visibility
+    if (route === '/users/me/roommate-visibility' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { visible } = await request.json()
+      
+      await userRepo.updateRoommateSearchVisibility(tokenData.userId, Boolean(visible))
+      
+      return handleCORS(NextResponse.json({
+        message: "Roommate search visibility updated"
+      }))
+    }
+
+    // BUG REPORT SYSTEM
+
+    // Submit bug report
+    if (route === '/help/report' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      
+      const { category, title, description, url: contextUrl, screenshot } = await request.json()
+      
+      if (!category || !title || !description) {
+        return handleCORS(NextResponse.json(
+          { error: "Category, title, and description are required" }, 
+          { status: 400 }
+        ))
       }
 
-      await db.collection('squads').insertOne(squad)
-      return handleCORS(NextResponse.json(squad))
-    }
+      if (!['Bug', 'Idea', 'Abuse'].includes(category)) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid category" }, 
+          { status: 400 }
+        ))
+      }
 
-    if (route.startsWith('/squads/user/') && method === 'GET') {
-      const userId = route.split('/')[3]
-      const squad = await db.collection('squads').findOne({ 
-        members: { $in: [userId] } 
+      const report = await bugReportRepo.create({
+        userId: tokenData.userId,
+        category,
+        title: sanitizeText(title),
+        description: sanitizeText(description),
+        contextUrl: contextUrl || null,
+        screenshot: screenshot || null
       })
-      return handleCORS(NextResponse.json(squad))
+
+      return handleCORS(NextResponse.json({
+        ticketId: report.ticketId,
+        message: "Bug report submitted successfully"
+      }))
     }
 
-    // Keep collaboration matching for compatibility
-    if (route.startsWith('/collaborations/matches/') && method === 'GET') {
-      // Simplified matching - return empty array for now
-      return handleCORS(NextResponse.json([]))
+    // Get bug report
+    if (route.startsWith('/help/report/') && method === 'GET') {
+      const ticketId = route.split('/')[3]
+      const tokenData = verifyToken(request)
+      
+      const report = await bugReportRepo.getById(ticketId)
+      if (!report) {
+        return handleCORS(NextResponse.json(
+          { error: "Ticket not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Only allow user to see their own reports
+      if (report.userId !== tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Not authorized to view this ticket" }, 
+          { status: 403 }
+        ))
+      }
+
+      return handleCORS(NextResponse.json(report))
+    }
+
+    // Legacy compatibility routes (keep existing squad routes working)
+    if (route === '/squads' && method === 'POST') {
+      // Redirect to houses
+      return handleRoute(request, { params: { path: ['houses'] } })
+    }
+
+    if (route.startsWith('/squads/user/')) {
+      // Redirect to houses/user
+      const userId = route.split('/')[3]
+      return handleRoute(request, { params: { path: ['houses', 'user', userId] } })
     }
 
     // Route not found
