@@ -100,8 +100,7 @@ class CreatorSquadV2Tester:
                 self.log(f"✅ Post created successfully:")
                 self.log(f"   - ID: {post_data['id']}")
                 self.log(f"   - Title: {post_data['title']}")
-                self.log(f"   - Provider: {post_data['provider']}")
-                self.log(f"   - Canonical URL: {post_data['canonicalUrl']}")
+                self.log(f"   - Platform Icon: {post_data.get('platformIcon', 'N/A')}")
                 self.log(f"   - Clip Count: {post_data.get('clipCount', 0)}")
                 return post_data
             else:
