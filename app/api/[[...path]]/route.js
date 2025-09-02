@@ -1,10 +1,21 @@
-import { MongoClient } from 'mongodb'
-import { v4 as uuidv4 } from 'uuid'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import fetch from 'node-fetch'
 import * as cheerio from 'cheerio'
+
+// Repository imports
+import {
+  userRepo,
+  houseRepo,
+  postRepo,
+  voteRepo,
+  inviteRepo,
+  bugReportRepo,
+  mediaRepo,
+  engagementRepo,
+  clipRepo
+} from '../../../lib/repositories/memory/index.js'
 
 // Global Configuration
 const CONFIG = {
