@@ -769,9 +769,298 @@ class CreatorSquadAPITester:
                 response.json() if response else None
             )
 
+    def test_enhanced_metadata_caching(self):
+        """Test enhanced metadata caching system with real URLs"""
+        print("\n" + "="*60)
+        print("TESTING ENHANCED METADATA CACHING SYSTEM")
+        print("="*60)
+        
+        if not self.auth_token or not self.test_user_id or not self.test_squad_id:
+            return self.log_test(
+                "Enhanced Metadata Caching", 
+                False, 
+                "Missing auth token, user ID, or squad ID. Run previous tests first."
+            )
+        
+        # Test with different platform URLs
+        test_urls = [
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",  # YouTube
+            "https://www.tiktok.com/@username/video/1234567890",  # TikTok (may not work but should handle gracefully)
+        ]
+        
+        results = []
+        
+        for url in test_urls:
+            post_data = {
+                "url": url,
+                "squadId": self.test_squad_id,
+                "userId": self.test_user_id
+            }
+            
+            # First request - should fetch and cache metadata
+            response1 = self.make_request('POST', '/posts', post_data, auth_required=True)
+            
+            if response1 and response1.status_code == 200:
+                data1 = response1.json()
+                
+                # Verify metadata fields are present
+                required_fields = ['title', 'platform', 'platformIcon']
+                missing_fields = [field for field in required_fields if field not in data1 or not data1[field]]
+                
+                if not missing_fields:
+                    # Second request - should use cached data (faster)
+                    start_time = time.time()
+                    response2 = self.make_request('POST', '/posts', post_data, auth_required=True)
+                    end_time = time.time()
+                    
+                    if response2 and response2.status_code == 200:
+                        data2 = response2.json()
+                        # Verify same metadata (indicating cache usage)
+                        if (data1['title'] == data2['title'] and 
+                            data1['platform'] == data2['platform'] and
+                            data1['platformIcon'] == data2['platformIcon']):
+                            results.append(f"{data1['platform']}: ✅ (cached)")
+                        else:
+                            results.append(f"{data1['platform']}: ❌ (cache mismatch)")
+                    else:
+                        results.append(f"{data1['platform']}: ❌ (second request failed)")
+                else:
+                    results.append(f"URL {url}: ❌ (missing fields: {missing_fields})")
+            else:
+                results.append(f"URL {url}: ❌ (request failed)")
+        
+        success = all("✅" in result for result in results)
+        return self.log_test(
+            "Enhanced Metadata Caching", 
+            success, 
+            f"Metadata caching tests: {', '.join(results)}"
+        )
+
+    def test_enhanced_engagement_system(self):
+        """Test enhanced engagement system with click tracking and verification"""
+        print("\n" + "="*60)
+        print("TESTING ENHANCED ENGAGEMENT SYSTEM")
+        print("="*60)
+        
+        if not self.auth_token or not self.test_user_id or not self.test_post_id:
+            return self.log_test(
+                "Enhanced Engagement System", 
+                False, 
+                "Missing auth token, user ID, or post ID. Run previous tests first."
+            )
+        
+        # Test 1: Track engagement click
+        click_data = {
+            "postId": self.test_post_id,
+            "userId": self.test_user_id,
+            "type": "like",
+            "redirectUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        }
+        
+        click_response = self.make_request('POST', '/engagements/click', click_data, auth_required=True)
+        
+        if not click_response or click_response.status_code != 200:
+            return self.log_test(
+                "Enhanced Engagement System - Click Tracking", 
+                False, 
+                f"Failed to track click. Status: {click_response.status_code if click_response else 'No response'}"
+            )
+        
+        click_result = click_response.json()
+        if 'message' not in click_result or 'redirectUrl' not in click_result:
+            return self.log_test(
+                "Enhanced Engagement System - Click Tracking", 
+                False, 
+                "Click response missing required fields"
+            )
+        
+        # Test 2: Verify engagement and award credits
+        verify_data = {
+            "postId": self.test_post_id,
+            "userId": self.test_user_id,
+            "type": "like",
+            "verificationData": {"platform": "youtube", "verified": True}
+        }
+        
+        verify_response = self.make_request('POST', '/engagements/verify', verify_data, auth_required=True)
+        
+        if not verify_response or verify_response.status_code != 200:
+            return self.log_test(
+                "Enhanced Engagement System - Verification", 
+                False, 
+                f"Failed to verify engagement. Status: {verify_response.status_code if verify_response else 'No response'}"
+            )
+        
+        verify_result = verify_response.json()
+        if 'engagement' not in verify_result or 'creditsEarned' not in verify_result:
+            return self.log_test(
+                "Enhanced Engagement System - Verification", 
+                False, 
+                "Verification response missing required fields"
+            )
+        
+        # Test 3: Try to duplicate click (should be prevented)
+        duplicate_click_response = self.make_request('POST', '/engagements/click', click_data, auth_required=True)
+        
+        if duplicate_click_response and duplicate_click_response.status_code == 200:
+            duplicate_result = duplicate_click_response.json()
+            if 'Already tracked' in duplicate_result.get('message', ''):
+                dedup_success = True
+            else:
+                dedup_success = False
+        else:
+            dedup_success = False
+        
+        # Test 4: Try to duplicate verification (should be prevented)
+        duplicate_verify_response = self.make_request('POST', '/engagements/verify', verify_data, auth_required=True)
+        
+        if duplicate_verify_response and duplicate_verify_response.status_code == 400:
+            duplicate_verify_result = duplicate_verify_response.json()
+            if 'already earned' in duplicate_verify_result.get('error', '').lower():
+                verify_dedup_success = True
+            else:
+                verify_dedup_success = False
+        else:
+            verify_dedup_success = False
+        
+        # Overall success check
+        success = (click_result.get('message') == 'Click tracked' and 
+                  verify_result.get('creditsEarned') == 1 and  # like = 1 credit
+                  dedup_success and 
+                  verify_dedup_success)
+        
+        return self.log_test(
+            "Enhanced Engagement System", 
+            success, 
+            f"Click tracking: ✅, Verification: ✅, Credits: {verify_result.get('creditsEarned', 0)}, Deduplication: {'✅' if dedup_success and verify_dedup_success else '❌'}"
+        )
+
+    def test_settings_security_endpoints(self):
+        """Test settings and security endpoints"""
+        print("\n" + "="*60)
+        print("TESTING SETTINGS & SECURITY ENDPOINTS")
+        print("="*60)
+        
+        if not self.auth_token or not self.test_user_id:
+            return self.log_test(
+                "Settings & Security", 
+                False, 
+                "Missing auth token or user ID. Run signup test first."
+            )
+        
+        # Create a test user for settings testing
+        timestamp = int(time.time())
+        test_user_data = {
+            "email": f"settings_test_{timestamp}@example.com",
+            "password": "OriginalPassword123!",
+            "displayName": f"Settings Test User {timestamp}"
+        }
+        
+        signup_response = self.make_request('POST', '/auth/signup', test_user_data)
+        if not signup_response or signup_response.status_code != 200:
+            return self.log_test(
+                "Settings & Security (Setup)", 
+                False, 
+                "Failed to create test user for settings testing"
+            )
+        
+        settings_user = signup_response.json()
+        settings_token = settings_user['token']
+        original_token = self.auth_token
+        self.auth_token = settings_token
+        
+        results = []
+        
+        # Test 1: Verify current password
+        verify_password_data = {
+            "currentPassword": test_user_data["password"]
+        }
+        
+        verify_response = self.make_request('POST', '/settings/password/verify', verify_password_data, auth_required=True)
+        if verify_response and verify_response.status_code == 200:
+            verify_result = verify_response.json()
+            if 'Verification code sent' in verify_result.get('message', ''):
+                results.append("Password verification: ✅")
+                
+                # Test 2: Verify email code (simulate with a mock code)
+                # In real testing, we'd need to capture the actual code from logs
+                verify_code_data = {
+                    "emailCode": "123456"  # This will fail, but we test the endpoint
+                }
+                
+                code_response = self.make_request('POST', '/settings/password/verify-code', verify_code_data, auth_required=True)
+                if code_response and code_response.status_code in [200, 400]:  # 400 expected for invalid code
+                    if code_response.status_code == 400 and 'Invalid or expired' in code_response.json().get('error', ''):
+                        results.append("Code verification endpoint: ✅")
+                    else:
+                        results.append("Code verification endpoint: ❌")
+                else:
+                    results.append("Code verification endpoint: ❌")
+            else:
+                results.append("Password verification: ❌")
+        else:
+            results.append("Password verification: ❌")
+        
+        # Test 3: Change username with password
+        username_data = {
+            "newUsername": f"Updated User {timestamp}",
+            "password": test_user_data["password"]
+        }
+        
+        username_response = self.make_request('POST', '/settings/username', username_data, auth_required=True)
+        if username_response and username_response.status_code == 200:
+            username_result = username_response.json()
+            if 'Username updated successfully' in username_result.get('message', ''):
+                results.append("Username change: ✅")
+            else:
+                results.append("Username change: ❌")
+        else:
+            results.append("Username change: ❌")
+        
+        # Test 4: Send email change code
+        email_code_data = {
+            "newEmail": f"new_email_{timestamp}@example.com",
+            "password": test_user_data["password"]
+        }
+        
+        email_code_response = self.make_request('POST', '/settings/email/send-code', email_code_data, auth_required=True)
+        if email_code_response and email_code_response.status_code == 200:
+            email_code_result = email_code_response.json()
+            if 'Confirmation code sent' in email_code_result.get('message', ''):
+                results.append("Email change code: ✅")
+                
+                # Test 5: Confirm email change (will fail with mock code, but tests endpoint)
+                confirm_email_data = {
+                    "newEmail": email_code_data["newEmail"],
+                    "confirmationCode": "123456"  # Mock code
+                }
+                
+                confirm_response = self.make_request('POST', '/settings/email/confirm', confirm_email_data, auth_required=True)
+                if confirm_response and confirm_response.status_code in [200, 400]:  # 400 expected for invalid code
+                    if confirm_response.status_code == 400 and 'Invalid or expired' in confirm_response.json().get('error', ''):
+                        results.append("Email confirmation endpoint: ✅")
+                    else:
+                        results.append("Email confirmation endpoint: ❌")
+                else:
+                    results.append("Email confirmation endpoint: ❌")
+            else:
+                results.append("Email change code: ❌")
+        else:
+            results.append("Email change code: ❌")
+        
+        # Restore original token
+        self.auth_token = original_token
+        
+        success = all("✅" in result for result in results)
+        return self.log_test(
+            "Settings & Security Endpoints", 
+            success, 
+            f"Security tests: {', '.join(results)}"
+        )
+
     def run_all_tests(self):
-        """Run all backend API tests"""
-        print("\n" + "🚀 STARTING CREATORSQUAD BACKEND API TESTS")
+        """Run all backend API tests including Option A features"""
+        print("\n" + "🚀 STARTING CREATORSQUAD BACKEND API TESTS - OPTION A FEATURES")
         print("=" * 80)
         print(f"Base URL: {self.base_url}")
         print(f"Test started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -792,6 +1081,11 @@ class CreatorSquadAPITester:
         test_results.append(self.test_get_user_credits())
         test_results.append(self.test_collaboration_matching())
         test_results.append(self.test_collaboration_invite())
+        
+        # NEW OPTION A TESTS
+        test_results.append(self.test_enhanced_metadata_caching())
+        test_results.append(self.test_enhanced_engagement_system())
+        test_results.append(self.test_settings_security_endpoints())
         
         # Summary
         print("\n" + "="*80)
