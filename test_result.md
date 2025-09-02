@@ -297,11 +297,11 @@ frontend:
 
   - task: "Profile Picture Upload and Display System"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/app/settings/page.js, /app/app/page.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
@@ -309,6 +309,9 @@ frontend:
         - working: "NA"
           agent: "main"
           comment: "✅ IMPLEMENTED - Created profile picture upload in settings with 5MB limit, validation, and display in avatars across UI. Backend MediaRepo integration ready."
+        - working: false
+          agent: "testing"
+          comment: "❌ FAILED - Settings page not loading properly due to authentication issues. Page redirects or fails to load when accessed directly. Authentication flow needs to be fixed before profile picture functionality can be tested."
 
   - task: "Enhanced Post Management UI"
     implemented: true
