@@ -663,44 +663,45 @@ class StreamerHouseAPITester:
     
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🏠 Starting Streamer House Backend API Testing Suite")
+        print("🏠 STARTING STREAMER HOUSE BACKEND API TESTING")
         print(f"Testing against: {API_BASE}")
         print("=" * 60)
         
-        # Core API tests
+        # CRITICAL TESTS - Authentication System
+        print("\n🔐 CRITICAL TESTS - Authentication System:")
         self.test_api_root()
-        
-        # Authentication flow
         self.test_user_signup()
         self.test_user_login()
         self.test_auth_me()
         
-        # House management
+        # RECENTLY FIXED - API Endpoints
+        print("\n🔧 RECENTLY FIXED - API Endpoints:")
+        self.test_roommate_search_system()
+        self.test_users_username_endpoint()
+        self.test_settings_roommate_search_endpoint()
+        self.test_media_upload_endpoint()
+        
+        # CORE FUNCTIONALITY
+        print("\n⚡ CORE FUNCTIONALITY:")
         self.test_house_creation()
         self.test_user_house_retrieval()
-        
-        # Post management
         self.test_post_creation()
         self.test_house_posts_retrieval()
-        self.test_post_deletion_by_owner()
-        
-        # Engagement system
         self.test_engage_redirect_system()
-        
-        # Clip system
         self.test_clip_creation()
-        
-        # Kick vote system
         self.test_kick_vote_system()
         
-        # Profile picture system
+        # INTEGRATION TESTING
+        print("\n🔗 INTEGRATION TESTING:")
+        self.test_post_deletion_by_owner()
         self.test_profile_picture_system()
-        
-        # Roommate search
-        self.test_roommate_search_system()
-        
-        # Bug report system
         self.test_bug_report_system()
+        
+        # SECURITY & VALIDATION
+        print("\n🛡️ SECURITY & VALIDATION:")
+        self.test_authentication_requirements()
+        self.test_input_validation()
+        self.test_rate_limiting()
         
         # Summary
         print("\n" + "=" * 60)
