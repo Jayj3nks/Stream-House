@@ -17,8 +17,9 @@ import { Plus, Users, Target, Trophy, Search, Settings, ExternalLink, Scissors, 
 
 export default function App() {
   const [user, setUser] = useState(null)
-  const [currentHouse, setCurrentHouse] = useState(null)
-  const [houseMembers, setHouseMembers] = useState([])
+  const [myHouses, setMyHouses] = useState([])
+  const [activeHouse, setActiveHouse] = useState(null)
+  const [houseSummary, setHouseSummary] = useState({ count: 0, canCreate: true, max: 5 })
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
   const [showAuth, setShowAuth] = useState(true)
@@ -66,58 +67,113 @@ export default function App() {
         const userData = await response.json()
         setUser(userData)
         setShowAuth(false)
-        loadHouseData(userData.id, token)
+        await loadMyHouses(token)
+        await loadHouseSummary(token)
+        await loadActiveHouse(token)
       } else {
         localStorage.removeItem('token')
+        setShowAuth(true)
       }
     } catch (error) {
       console.error('Error loading user data:', error)
+      localStorage.removeItem('token')
+      setShowAuth(true)
     }
   }
 
-  const loadHouseData = async (userId, token) => {
+  const loadMyHouses = async (token) => {
     try {
-      const response = await fetch(`/api/houses/user/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch('/api/users/me/houses', {
+        headers: { Authorization: `Bearer ${token || localStorage.getItem('token')}` }
       })
       if (response.ok) {
-        const house = await response.json()
-        setCurrentHouse(house)
-        if (house) {
-          loadHousePosts(house.id, token)
-          loadHouseMembers(house.id, token)
+        const houses = await response.json()
+        setMyHouses(houses)
+      }
+    } catch (error) {
+      console.error('Error loading houses:', error)
+    }
+  }
+
+  const loadHouseSummary = async (token) => {
+    try {
+      const response = await fetch('/api/users/me/houses/summary', {
+        headers: { Authorization: `Bearer ${token || localStorage.getItem('token')}` }
+      })
+      if (response.ok) {
+        const summary = await response.json()
+        setHouseSummary(summary)
+      }
+    } catch (error) {
+      console.error('Error loading house summary:', error)
+    }
+  }
+
+  const loadActiveHouse = async (token) => {
+    try {
+      const response = await fetch('/api/session/active-house', {
+        headers: { Authorization: `Bearer ${token || localStorage.getItem('token')}` }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.houseId) {
+          const house = myHouses.find(h => h.houseId === data.houseId)
+          setActiveHouse(house)
+          loadHouseFeed(token)
         }
       }
     } catch (error) {
-      console.error('Error loading house data:', error)
+      console.error('Error loading active house:', error)
     }
   }
 
-  const loadHouseMembers = async (houseId, token) => {
+  const loadHouseFeed = async (token) => {
+    if (!activeHouse) return
+    
     try {
-      const response = await fetch(`/api/houses/${houseId}/members`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (response.ok) {
-        const members = await response.json()
-        setHouseMembers(members)
-      }
-    } catch (error) {
-      console.error('Error loading house members:', error)
-    }
-  }
-
-  const loadHousePosts = async (houseId, token) => {
-    try {
-      const response = await fetch(`/api/posts/house/${houseId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch('/api/house/feed', {
+        headers: { Authorization: `Bearer ${token || localStorage.getItem('token')}` }
       })
       if (response.ok) {
         const postsData = await response.json()
         setPosts(postsData)
       }
     } catch (error) {
-      console.error('Error loading posts:', error)
+      console.error('Error loading house feed:', error)
+    }
+  }
+
+  const setActiveHouseHandler = async (house) => {
+    try {
+      const response = await fetch('/api/session/active-house', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ houseId: house.houseId })
+      })
+
+      if (response.ok) {
+        setActiveHouse(house)
+        // Update houses list to reflect active status
+        setMyHouses(prev => prev.map(h => ({
+          ...h,
+          isActive: h.houseId === house.houseId
+        })))
+        // Load feed for new active house
+        loadHouseFeed()
+        toast({
+          title: "House switched",
+          description: `Now posting to ${house.name}`
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to switch house.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -147,7 +203,9 @@ export default function App() {
           title: isSignUp ? "Account created!" : "Welcome back!",
           description: `You now have ${data.user.totalPoints || 0} points.`
         })
-        loadHouseData(data.user.id, data.token)
+        await loadMyHouses(data.token)
+        await loadHouseSummary(data.token)
+        await loadActiveHouse(data.token)
       } else {
         toast({
           title: "Error",
@@ -177,17 +235,45 @@ export default function App() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ name: houseName, ownerId: user.id })
+        body: JSON.stringify({ name: houseName })
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        const house = await response.json()
-        setCurrentHouse(house)
         setHouseName('')
         setShowCreateHouse(false)
+        
+        // Reload houses and summary
+        await loadMyHouses()
+        await loadHouseSummary()
+        
+        // Auto-switch to new house
+        const newHouse = {
+          houseId: data.id,
+          name: data.name,
+          role: 'owner',
+          membersCount: 1,
+          activePosts24h: 0,
+          isActive: true
+        }
+        setActiveHouse(newHouse)
+        
         toast({
           title: "House created!",
           description: `${houseName} is ready for collaborations.`
+        })
+      } else if (response.status === 409 && data.code === 'HOUSE_LIMIT_REACHED') {
+        toast({
+          title: "House limit reached",
+          description: `You can only create ${data.max} houses.`,
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create house.",
+          variant: "destructive"
         })
       }
     } catch (error) {
@@ -202,7 +288,7 @@ export default function App() {
   }
 
   const addPost = async () => {
-    if (!newPostUrl.trim()) return
+    if (!newPostUrl.trim() || !activeHouse) return
 
     setLoading(true)
     try {
@@ -212,10 +298,7 @@ export default function App() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({
-          url: newPostUrl,
-          houseId: currentHouse?.id
-        })
+        body: JSON.stringify({ url: newPostUrl })
       })
 
       if (response.ok) {
@@ -287,7 +370,6 @@ export default function App() {
       if (response.ok) {
         const data = await response.json()
         
-        // Update post clip count
         setPosts(prev => prev.map(post => {
           if (post.id === postId) {
             return { ...post, clipCount: (post.clipCount || 0) + 1 }
@@ -295,7 +377,6 @@ export default function App() {
           return post
         }))
 
-        // Update user points
         setUser(prev => ({
           ...prev,
           totalPoints: (prev.totalPoints || 0) + 2
@@ -312,59 +393,6 @@ export default function App() {
       toast({
         title: "Error",
         description: "Failed to create clip.",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const addCollaborators = async (postId) => {
-    if (selectedCollaborators.length === 0) return
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/posts/${postId}/collaborators`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          collaboratorUserIds: selectedCollaborators
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Update post to show as collaboration
-        setPosts(prev => prev.map(post => {
-          if (post.id === postId) {
-            return { ...post, isCollaboration: true }
-          }
-          return post
-        }))
-
-        // Update user points
-        if (data.pointsAwarded > 0) {
-          setUser(prev => ({
-            ...prev,
-            totalPoints: (prev.totalPoints || 0) + 3
-          }))
-        }
-
-        setSelectedCollaborators([])
-        setShowAddCollaborators(prev => ({ ...prev, [postId]: false }))
-        toast({
-          title: "Collaboration saved!",
-          description: data.pointsAwarded > 0 ? "+3 points to collaborators." : "Already marked as collaboration."
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add collaborators.",
         variant: "destructive"
       })
     } finally {
@@ -400,45 +428,11 @@ export default function App() {
     }
   }
 
-  const initializeKickVote = async () => {
-    if (!kickTarget) return
-
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/houses/${currentHouse.id}/votes/kick`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          targetUserId: kickTarget
-        })
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Vote initiated",
-          description: "House members can now vote on this removal."
-        })
-        setShowKickVote(false)
-        setKickTarget('')
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to initiate vote.",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const logout = () => {
     localStorage.removeItem('token')
     setUser(null)
-    setCurrentHouse(null)
+    setMyHouses([])
+    setActiveHouse(null)
     setPosts([])
     setShowAuth(true)
   }
@@ -520,61 +514,100 @@ export default function App() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-purple-600">Streamer House</h1>
-            {currentHouse && (
-              <Badge variant="secondary" className="flex items-center space-x-1">
-                <Home className="h-3 w-3" />
-                <span>{currentHouse.name}</span>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-purple-600">Streamer House</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="flex items-center space-x-1">
+                <Trophy className="h-3 w-3" />
+                <span>{user?.totalPoints || 0} points</span>
               </Badge>
-            )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/roommates'}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Find Roommates
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/settings'}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = `/profile/${user?.username}`}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+              <Avatar>
+                <AvatarImage src={user?.avatarUrl} />
+                <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <Button variant="outline" size="sm" onClick={logout}>
+                Logout
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Badge variant="outline" className="flex items-center space-x-1">
-              <Trophy className="h-3 w-3" />
-              <span>{user?.totalPoints || 0} points</span>
-            </Badge>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.href = '/roommates'}
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Find Roommates
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.href = '/settings'}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.href = `/profile/${user?.username}`}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Profile
-            </Button>
-            <Avatar>
-              <AvatarImage src={user?.profilePictureUrl} />
-              <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" size="sm" onClick={logout}>
-              Logout
-            </Button>
-          </div>
+
+          {/* My Houses Switcher */}
+          {myHouses.length > 0 && (
+            <div className="mt-4 flex items-center space-x-4">
+              <span className="text-sm font-medium text-muted-foreground">My Houses:</span>
+              <div className="flex flex-wrap gap-2">
+                {myHouses.map((house) => (
+                  <button
+                    key={house.houseId}
+                    onClick={() => setActiveHouseHandler(house)}
+                    className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm transition-colors ${
+                      house.isActive 
+                        ? 'bg-purple-100 text-purple-800 border-2 border-purple-300' 
+                        : 'bg-muted hover:bg-muted/80 border-2 border-transparent'
+                    }`}
+                  >
+                    <Avatar className="w-5 h-5">
+                      <AvatarImage src={house.avatarUrl} />
+                      <AvatarFallback className="text-xs">{house.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <span>{house.name}</span>
+                    {house.activePosts24h > 0 && (
+                      <Badge variant="secondary" className="text-xs ml-1">
+                        {house.activePosts24h}
+                      </Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Create House Button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowCreateHouse(true)}
+                disabled={!houseSummary.canCreate}
+                title={!houseSummary.canCreate ? `Limit reached (${houseSummary.max})` : ''}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Create House {!houseSummary.canCreate && `(${houseSummary.count}/${houseSummary.max})`}
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {!currentHouse ? (
+        {myHouses.length === 0 ? (
           <Card className="max-w-md mx-auto">
             <CardHeader className="text-center">
-              <CardTitle>Create Your House</CardTitle>
+              <CardTitle>Create Your First House</CardTitle>
               <CardDescription>
                 Start building your creator community
               </CardDescription>
@@ -612,6 +645,30 @@ export default function App() {
               )}
             </CardContent>
           </Card>
+        ) : !activeHouse ? (
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle>Select Active House</CardTitle>
+              <CardDescription>
+                Choose which house to post to
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {myHouses.map((house) => (
+                  <Button
+                    key={house.houseId}
+                    variant="outline"
+                    onClick={() => setActiveHouseHandler(house)}
+                    className="w-full justify-start"
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    {house.name}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Feed */}
@@ -623,6 +680,9 @@ export default function App() {
                     <Plus className="h-5 w-5" />
                     <span>Share Content</span>
                   </CardTitle>
+                  <CardDescription>
+                    Posting to: <strong>{activeHouse.name}</strong>
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!showNewPost ? (
@@ -665,7 +725,7 @@ export default function App() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar>
-                            <AvatarImage src={post.authorProfilePicture} />
+                            <AvatarImage src={post.authorAvatar} />
                             <AvatarFallback>{post.authorName?.[0]?.toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
@@ -717,17 +777,6 @@ export default function App() {
                                 <ExternalLink className="h-4 w-4" />
                                 <span>Open</span>
                               </Button>
-
-                              {!post.isCollaboration && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                                  className="flex items-center space-x-2"
-                                >
-                                  <UserPlus className="h-4 w-4" />
-                                  <span>Add Collaborators</span>
-                                </Button>
-                              )}
 
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -830,46 +879,6 @@ export default function App() {
                           </div>
                         </div>
                       )}
-
-                      {/* Add Collaborators Form */}
-                      {showAddCollaborators[post.id] && (
-                        <div className="space-y-3 p-4 bg-muted rounded-lg">
-                          <div className="space-y-2">
-                            <Label htmlFor={`collaborators-${post.id}`}>Select House Members</Label>
-                            <Select 
-                              value={selectedCollaborators.join(',')} 
-                              onValueChange={(value) => setSelectedCollaborators(value ? value.split(',') : [])}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose collaborators..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {houseMembers.filter(member => member.id !== user.id).map((member) => (
-                                  <SelectItem key={member.id} value={member.id}>
-                                    {member.displayName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button 
-                              onClick={() => addCollaborators(post.id)} 
-                              disabled={loading || selectedCollaborators.length === 0}
-                              size="sm"
-                            >
-                              Add Collaborators
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: false }))}
-                              size="sm"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -911,51 +920,31 @@ export default function App() {
               </Card>
 
               {/* House Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Home className="h-5 w-5" />
-                    <span>House Stats</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Members</span>
-                      <span className="font-medium">{houseMembers.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Posts Today</span>
-                      <span className="font-medium">{posts.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Total Clips</span>
-                      <span className="font-medium">
-                        {posts.reduce((acc, post) => acc + (post.clipCount || 0), 0)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* House Management */}
-              {currentHouse?.ownerId === user?.id && (
+              {activeHouse && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Settings className="h-5 w-5" />
-                      <span>House Management</span>
+                      <Home className="h-5 w-5" />
+                      <span>House Stats</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-start text-red-600 hover:text-red-700"
-                      onClick={() => setShowKickVote(true)}
-                    >
-                      <UserMinus className="h-4 w-4 mr-2" />
-                      Initiate Kick Vote
-                    </Button>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Members</span>
+                        <span className="font-medium">{activeHouse.membersCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Posts Today</span>
+                        <span className="font-medium">{activeHouse.activePosts24h}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Total Clips</span>
+                        <span className="font-medium">
+                          {posts.reduce((acc, post) => acc + (post.clipCount || 0), 0)}
+                        </span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -1002,37 +991,31 @@ export default function App() {
         )}
       </div>
 
-      {/* Kick Vote Dialog */}
-      {showKickVote && (
-        <AlertDialog open={showKickVote} onOpenChange={setShowKickVote}>
+      {/* Create House Dialog */}
+      {showCreateHouse && myHouses.length > 0 && (
+        <AlertDialog open={showCreateHouse} onOpenChange={setShowCreateHouse}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Initiate Kick Vote</AlertDialogTitle>
+              <AlertDialogTitle>Create New House</AlertDialogTitle>
               <AlertDialogDescription>
-                Start a 48-hour vote to remove a member. Majority wins, target won't be notified.
+                Create a house for creator collaboration ({houseSummary.count}/{houseSummary.max} used)
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="kickTarget">Select Member to Remove</Label>
-                <Select value={kickTarget} onValueChange={setKickTarget}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose member..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {houseMembers.filter(member => member.id !== user.id).map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.displayName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="newHouseName">House Name</Label>
+                <Input
+                  id="newHouseName"
+                  value={houseName}
+                  onChange={(e) => setHouseName(e.target.value)}
+                  placeholder="e.g., Gaming Creators"
+                />
               </div>
             </div>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={initializeKickVote} disabled={!kickTarget}>
-                Start Vote
+              <AlertDialogAction onClick={createHouse} disabled={!houseName.trim() || loading}>
+                {loading ? "Creating..." : "Create House"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
