@@ -460,43 +460,62 @@ class CreatorSquadAPITester:
             )
 
     def test_create_engagement(self):
-        """Test create engagement endpoint and credit system"""
+        """Test create engagement endpoint and credit system - UPDATED FOR OPTION A"""
         print("\n" + "="*60)
-        print("TESTING ENGAGEMENT SYSTEM - RECORD ENGAGEMENT")
+        print("TESTING ENGAGEMENT SYSTEM - RECORD ENGAGEMENT (LEGACY)")
         print("="*60)
+        
+        # This test is now deprecated in favor of the new enhanced engagement system
+        # We'll test the new click + verify flow instead
         
         if not self.auth_token or not self.test_user_id or not self.test_post_id:
             return self.log_test(
-                "Create Engagement", 
+                "Create Engagement (Legacy)", 
                 False, 
                 "Missing auth token, user ID, or post ID. Run previous tests first."
             )
         
-        # Test different engagement types
+        # Test the new engagement flow: click tracking + verification
         engagement_types = ['like', 'comment', 'share']
         results = []
         
         for engagement_type in engagement_types:
-            engagement_data = {
+            # Step 1: Track click
+            click_data = {
                 "postId": self.test_post_id,
                 "userId": self.test_user_id,
-                "type": engagement_type
+                "type": engagement_type,
+                "redirectUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
             }
             
-            response = self.make_request('POST', '/engagements', engagement_data, auth_required=True)
+            click_response = self.make_request('POST', '/engagements/click', click_data, auth_required=True)
             
-            if response and response.status_code == 200:
-                data = response.json()
-                if 'id' in data and 'type' in data and 'postId' in data:
-                    results.append(f"{engagement_type}: ✅")
+            if click_response and click_response.status_code == 200:
+                # Step 2: Verify engagement
+                verify_data = {
+                    "postId": self.test_post_id,
+                    "userId": self.test_user_id,
+                    "type": engagement_type,
+                    "verificationData": {"platform": "youtube", "verified": True}
+                }
+                
+                verify_response = self.make_request('POST', '/engagements/verify', verify_data, auth_required=True)
+                
+                if verify_response and verify_response.status_code == 200:
+                    verify_result = verify_response.json()
+                    expected_credits = 1 if engagement_type == 'like' else (2 if engagement_type == 'comment' else 3)
+                    if verify_result.get('creditsEarned') == expected_credits:
+                        results.append(f"{engagement_type}: ✅")
+                    else:
+                        results.append(f"{engagement_type}: ❌ (wrong credits: {verify_result.get('creditsEarned')})")
                 else:
-                    results.append(f"{engagement_type}: ❌ (missing fields)")
+                    results.append(f"{engagement_type}: ❌ (verify failed)")
             else:
-                results.append(f"{engagement_type}: ❌ (status {response.status_code if response else 'no response'})")
+                results.append(f"{engagement_type}: ❌ (click failed)")
         
         success = all("✅" in result for result in results)
         return self.log_test(
-            "Create Engagement", 
+            "Create Engagement (New Flow)", 
             success, 
             f"Engagement tests: {', '.join(results)}"
         )
