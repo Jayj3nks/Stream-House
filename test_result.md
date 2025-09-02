@@ -296,14 +296,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Single Engage System - Engage Redirect Endpoint"
-    - "Single Engage System - 24-hour Deduplication"
-  stuck_tasks:
-    - "Single Engage System - Engage Redirect Endpoint"
-    - "Single Engage System - 24-hour Deduplication"
-  test_all: false
-  test_priority: "high_first"
+  current_focus: []
+  stuck_tasks: []
+  test_all: true
+  test_priority: "comprehensive_completed"
 
 agent_communication:
     - agent: "testing"
