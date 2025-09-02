@@ -180,15 +180,10 @@ export default function App() {
     setLoading(true)
 
     try {
-      const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/login'
-      const body = isSignUp 
-        ? { email, password, displayName } 
-        : { email, password }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ email, password })
       })
 
       const data = await response.json()
@@ -198,7 +193,7 @@ export default function App() {
         setUser(data.user)
         setShowAuth(false)
         toast({
-          title: isSignUp ? "Account created!" : "Welcome back!",
+          title: "Welcome back!",
           description: `You now have ${data.user.totalPoints || 0} points.`
         })
         await loadMyHouses(data.token)
