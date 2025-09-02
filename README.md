@@ -49,7 +49,7 @@ yarn install
 ```bash
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=creator_squad
-NEXT_PUBLIC_BASE_URL=https://collabsquad.preview.emergentagent.com
+NEXT_PUBLIC_BASE_URL=https://contentcrew.preview.emergentagent.com
 ```
 
 3. **Run the development server**:
@@ -59,7 +59,7 @@ yarn dev
 
 4. **Access the application**:
    - Local: http://localhost:3000
-   - Production: https://collabsquad.preview.emergentagent.com
+   - Production: https://contentcrew.preview.emergentagent.com
 
 ## 🎮 How to Use
 
