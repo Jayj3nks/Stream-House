@@ -42,7 +42,7 @@ export default function RoommatesPage() {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
-        window.location.href = '/'
+        window.location.href = '/login?next=/roommates'
         return
       }
 
@@ -52,11 +52,23 @@ export default function RoommatesPage() {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
+      } else if (response.status === 401) {
+        // Redirect to login with next parameter instead of logging out
+        window.location.href = '/login?next=/roommates'
       } else {
-        window.location.href = '/'
+        toast({
+          title: "Error",
+          description: "Failed to load user data.",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       console.error('Error loading user data:', error)
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
