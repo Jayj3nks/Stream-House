@@ -240,15 +240,30 @@ export default function ProfilePage({ params }) {
                         </p>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <Button
-                          size="sm"
-                          onClick={() => handleEngage(post.id)}
-                          className="flex items-center space-x-1"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          <span>Engage</span>
-                        </Button>
+                      <div className="flex items-center justify-between pt-3">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleEngage(post.id)}
+                            className="flex items-center space-x-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            <span>Engage</span>
+                          </Button>
+                          
+                          {/* Upload/Create Clip button for other members */}
+                          {!isOwnProfile && currentUser && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.location.href = `/clip/create?postId=${post.id}`}
+                              className="flex items-center space-x-1"
+                            >
+                              <Scissors className="h-3 w-3" />
+                              <span>Create Clip</span>
+                            </Button>
+                          )}
+                        </div>
                         
                         {(post.clipCount || 0) > 0 && (
                           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
