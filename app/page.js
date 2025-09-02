@@ -356,9 +356,9 @@ export default function App() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-purple-600">CreatorSquad v2</CardTitle>
+            <CardTitle className="text-2xl font-bold text-purple-600">Streamer House</CardTitle>
             <CardDescription>
-              {isSignUp ? "Create your account" : "Welcome back!"}
+              {isSignUp ? "Join the house!" : "Welcome back to the house!"}
             </CardDescription>
           </CardHeader>
           <CardContent>
