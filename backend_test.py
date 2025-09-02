@@ -1,25 +1,77 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Tests for CreatorSquad v2
-Tests the new streamlined engagement, clips, and collaboration features
+CreatorSquad v2 Comprehensive Test Suite
+Testing ALL edge cases, security, permissions, and concurrency scenarios
 """
 
 import requests
 import json
 import time
-import os
+import threading
+import concurrent.futures
 from datetime import datetime, timedelta
-
-# Get base URL from environment
+import uuid
+import random
+import string
 import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Use the public URL from environment
+# Configuration
 NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://collabsquad.preview.emergentagent.com')
 BASE_URL = f"{NEXT_PUBLIC_BASE_URL}/api"
+HEADERS = {"Content-Type": "application/json"}
+
+# Test Results Storage
+test_results = []
+failed_tests = []
+
+def log_test(test_name, endpoint, expected, actual, passed, payload=None, response_data=None):
+    """Log test results"""
+    result = {
+        "test_name": test_name,
+        "endpoint": endpoint,
+        "expected": expected,
+        "actual": actual,
+        "status": "PASS" if passed else "FAIL",
+        "payload": payload,
+        "response_data": response_data
+    }
+    test_results.append(result)
+    if not passed:
+        failed_tests.append(result)
+    
+    status_icon = "✅" if passed else "❌"
+    print(f"{status_icon} {test_name}: {expected} -> {actual}")
+
+def create_test_user(suffix=""):
+    """Create a test user and return auth token"""
+    user_data = {
+        "email": f"testuser{suffix}@example.com",
+        "password": "TestPassword123!",
+        "displayName": f"Test User {suffix}",
+        "platforms": ["YouTube", "TikTok"],
+        "niches": ["Gaming", "Tech"],
+        "games": ["Fortnite", "Minecraft"],
+        "city": "San Francisco",
+        "timeZone": "America/Los_Angeles",
+        "hasSchedule": True,
+        "schedule": {
+            "monday": ["10:00", "14:00"],
+            "tuesday": ["10:00", "14:00"]
+        },
+        "bio": f"Test bio for user {suffix}"
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/auth/signup", json=user_data, headers=HEADERS)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("token"), data.get("user")
+        else:
+            print(f"Failed to create user {suffix}: {response.status_code} - {response.text}")
+            return None, None
+    except Exception as e:
+        print(f"Error creating user {suffix}: {e}")
+        return None, None
 
 class CreatorSquadV2Tester:
     def __init__(self):
