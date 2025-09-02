@@ -438,6 +438,14 @@ export default function App() {
               <Search className="h-4 w-4 mr-2" />
               Find Collabs
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = '/settings'}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
             <Avatar>
               <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
