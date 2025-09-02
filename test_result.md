@@ -519,6 +519,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ FAILED - Settings page not loading properly, likely due to authentication requirements. Cannot test tabbed interface or roommate search toggle functionality."
+        - working: false
+          agent: "testing"
+          comment: "❌ NAVIGATION ISSUE AFTER BACKEND FIXES - Settings page not loading properly via navigation buttons from main app header. Direct URL navigation to /settings may work but header navigation buttons have issues. Authentication is working but navigation to settings page is problematic."
 
 metadata:
   created_by: "testing_agent"
