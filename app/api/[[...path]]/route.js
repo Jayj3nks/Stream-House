@@ -99,9 +99,9 @@ async function fetchUrlMetadata(url) {
   try {
     const db = await connectToMongo()
     
-    // Check cache first
+    // Check cache first (revalidate if older than 7 days)
     const cached = await db.collection('url_metadata').findOne({ url })
-    if (cached && cached.cachedAt > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+    if (cached && cached.cachedAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) {
       return cached.metadata
     }
 
@@ -132,36 +132,44 @@ async function fetchUrlMetadata(url) {
                      $('meta[name="twitter:image"]').attr('content') || 
                      ''
     
-    // Enhanced platform detection
-    let platform = 'Other'
+    // Enhanced platform detection with canonical URL creation
+    let provider = 'Other'
     let platformIcon = '🔗'
+    let canonicalUrl = url
     
     if (url.includes('tiktok.com')) {
-      platform = 'TikTok'
+      provider = 'TikTok'
       platformIcon = '🎵'
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      platform = 'YouTube'
+      provider = 'YouTube'
       platformIcon = '📺'
+      // Convert youtu.be to youtube.com for canonical URL
+      if (url.includes('youtu.be/')) {
+        const videoId = url.split('youtu.be/')[1].split('?')[0]
+        canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
+      }
     } else if (url.includes('instagram.com')) {
-      platform = 'Instagram'
+      provider = 'Instagram'
       platformIcon = '📷'
     } else if (url.includes('twitch.tv')) {
-      platform = 'Twitch'
+      provider = 'Twitch'
       platformIcon = '🎮'
     } else if (url.includes('twitter.com') || url.includes('x.com')) {
-      platform = 'Twitter'
+      provider = 'Twitter'
       platformIcon = '🐦'
     } else if (url.includes('facebook.com')) {
-      platform = 'Facebook'
+      provider = 'Facebook'
       platformIcon = '👥'
     }
 
     const metadata = { 
       title: title.slice(0, 200), 
       description: description.slice(0, 300),
-      thumbnail, 
-      platform,
-      platformIcon 
+      thumbnailUrl: thumbnail, 
+      provider,
+      platformIcon,
+      canonicalUrl,
+      originalUrl: url
     }
 
     // Cache the result
@@ -183,9 +191,11 @@ async function fetchUrlMetadata(url) {
     return { 
       title: 'Content Post', 
       description: '',
-      thumbnail: '', 
-      platform: 'Other',
-      platformIcon: '🔗'
+      thumbnailUrl: '', 
+      provider: 'Other',
+      platformIcon: '🔗',
+      canonicalUrl: url,
+      originalUrl: url
     }
   }
 }
@@ -238,7 +248,7 @@ async function handleRoute(request, { params }) {
 
     // Root endpoint
     if (route === '/' && method === 'GET') {
-      return handleCORS(NextResponse.json({ message: "CreatorSquad API" }))
+      return handleCORS(NextResponse.json({ message: "CreatorSquad API v2" }))
     }
 
     // AUTH ROUTES
@@ -278,9 +288,12 @@ async function handleRoute(request, { params }) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10)
 
-      // Create user
+      // Create user with username from display name
+      const username = displayName.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000)
+
       const user = {
         id: uuidv4(),
+        username,
         email,
         password: hashedPassword,
         displayName,
@@ -293,7 +306,7 @@ async function handleRoute(request, { params }) {
         schedule,
         bio,
         createdAt: new Date(),
-        credits: 0
+        totalPoints: 0
       }
 
       await db.collection('users').insertOne(user)
@@ -363,7 +376,7 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(userWithoutPassword))
     }
 
-    // SETTINGS ROUTES
+    // SETTINGS ROUTES (keeping existing settings functionality)
 
     // Verify current password for password change - POST /api/settings/password/verify
     if (route === '/settings/password/verify' && method === 'POST') {
@@ -400,7 +413,6 @@ async function handleRoute(request, { params }) {
         { upsert: true }
       )
 
-      // In a real app, send email here
       console.log(`Password change verification code for ${user.email}: ${verificationCode}`)
 
       return handleCORS(NextResponse.json({ 
@@ -548,7 +560,6 @@ async function handleRoute(request, { params }) {
         { upsert: true }
       )
 
-      // In a real app, send email here
       console.log(`Email change verification code for ${newEmail}: ${verificationCode}`)
 
       return handleCORS(NextResponse.json({ 
@@ -590,7 +601,394 @@ async function handleRoute(request, { params }) {
       }))
     }
 
-    // SQUAD ROUTES
+    // NEW POST SYSTEM
+
+    // Create post - POST /api/posts
+    if (route === '/posts' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { url, squadId } = await request.json()
+      
+      if (!url) {
+        return handleCORS(NextResponse.json(
+          { error: "URL is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Fetch URL metadata with caching
+      const metadata = await fetchUrlMetadata(url)
+
+      // Get user info
+      const user = await db.collection('users').findOne({ id: tokenData.userId })
+
+      const post = {
+        id: uuidv4(),
+        ownerUserId: tokenData.userId,
+        squadId: squadId || null,
+        provider: metadata.provider,
+        originalUrl: metadata.originalUrl,
+        canonicalUrl: metadata.canonicalUrl,
+        title: metadata.title,
+        description: metadata.description,
+        thumbnailUrl: metadata.thumbnailUrl,
+        isCollaboration: false,
+        createdAt: new Date(),
+        // Add author info for compatibility
+        authorName: user?.displayName || 'Unknown',
+        platform: metadata.provider,
+        platformIcon: metadata.platformIcon
+      }
+
+      await db.collection('posts').insertOne(post)
+      
+      // Get clip count for this post
+      const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
+      post.clipCount = clipCount
+
+      return handleCORS(NextResponse.json(post))
+    }
+
+    // Get single post - GET /api/posts/{id}
+    if (route.startsWith('/posts/') && !route.includes('/collaborators') && !route.includes('/clips') && method === 'GET') {
+      const postId = route.split('/')[2]
+      
+      const post = await db.collection('posts').findOne({ id: postId })
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Get clip count
+      const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
+      post.clipCount = clipCount
+
+      // Get collaborators if it's a collaboration
+      if (post.isCollaboration) {
+        const collaborators = await db.collection('post_collaborators')
+          .find({ postId: post.id })
+          .toArray()
+        
+        // Get user details for collaborators
+        const collaboratorIds = collaborators.map(c => c.userId)
+        const users = await db.collection('users')
+          .find({ id: { $in: collaboratorIds } })
+          .project({ id: 1, displayName: 1, username: 1 })
+          .toArray()
+        
+        post.collaborators = users
+      }
+
+      return handleCORS(NextResponse.json(post))
+    }
+
+    // Get squad posts - GET /api/posts/squad/{squadId}
+    if (route.startsWith('/posts/squad/') && method === 'GET') {
+      const squadId = route.split('/')[3]
+      
+      const posts = await db.collection('posts')
+        .find({ squadId })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .toArray()
+
+      // Get clip counts for each post
+      for (let post of posts) {
+        const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
+        post.clipCount = clipCount
+      }
+
+      return handleCORS(NextResponse.json(posts))
+    }
+
+    // ENGAGE SYSTEM
+
+    // Engage redirect - GET /api/r/{postId}?u={userId}
+    if (route.startsWith('/r/') && method === 'GET') {
+      const postId = route.split('/')[2]
+      const url = new URL(request.url)
+      const userId = url.searchParams.get('u')
+
+      if (!userId) {
+        return handleCORS(NextResponse.json(
+          { error: "User ID is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Get post
+      const post = await db.collection('posts').findOne({ id: postId })
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Check if user already engaged in last 24 hours
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      const existingEngagement = await db.collection('engagements').findOne({
+        userId,
+        postId,
+        type: 'engage',
+        createdAt: { $gt: yesterday }
+      })
+
+      if (!existingEngagement) {
+        // Award 1 point for engagement
+        const engagement = {
+          id: uuidv4(),
+          userId,
+          postId,
+          type: 'engage',
+          points: 1,
+          status: 'credited',
+          createdAt: new Date()
+        }
+
+        await db.collection('engagements').insertOne(engagement)
+
+        // Update user total points
+        await db.collection('users').updateOne(
+          { id: userId },
+          { $inc: { totalPoints: 1 } }
+        )
+      }
+
+      // Redirect to canonical URL
+      return Response.redirect(post.canonicalUrl, 302)
+    }
+
+    // CLIPS SYSTEM
+
+    // Create clip - POST /api/clips
+    if (route === '/clips' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { postId, clipUrl, source = 'url' } = await request.json()
+      
+      if (!postId || (!clipUrl && source === 'url')) {
+        return handleCORS(NextResponse.json(
+          { error: "Post ID and clip URL are required" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Verify post exists
+      const post = await db.collection('posts').findOne({ id: postId })
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Create clip
+      const clip = {
+        id: uuidv4(),
+        postId,
+        creatorUserId: tokenData.userId,
+        source,
+        clipUrl: source === 'url' ? clipUrl : null,
+        storagePath: source === 'upload' ? null : null, // TODO: implement file upload
+        thumbnailUrl: null, // TODO: generate thumbnail
+        createdAt: new Date()
+      }
+
+      await db.collection('clips').insertOne(clip)
+
+      // Award 2 points for creating clip
+      const engagement = {
+        id: uuidv4(),
+        userId: tokenData.userId,
+        postId,
+        type: 'clip',
+        points: 2,
+        status: 'credited',
+        createdAt: new Date()
+      }
+
+      await db.collection('engagements').insertOne(engagement)
+
+      // Update user total points
+      await db.collection('users').updateOne(
+        { id: tokenData.userId },
+        { $inc: { totalPoints: 2 } }
+      )
+
+      return handleCORS(NextResponse.json({ 
+        clip, 
+        pointsAwarded: 2 
+      }))
+    }
+
+    // Get clips for post - GET /api/posts/{postId}/clips
+    if (route.match(/^\/posts\/[^\/]+\/clips$/) && method === 'GET') {
+      const postId = route.split('/')[2]
+      
+      const clips = await db.collection('clips')
+        .find({ postId })
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      // Get creator info for each clip
+      for (let clip of clips) {
+        const creator = await db.collection('users')
+          .findOne({ id: clip.creatorUserId }, { projection: { displayName: 1, username: 1 } })
+        clip.creator = creator
+      }
+
+      return handleCORS(NextResponse.json(clips))
+    }
+
+    // COLLABORATION SYSTEM
+
+    // Add collaborators to post - POST /api/posts/{postId}/collaborators
+    if (route.match(/^\/posts\/[^\/]+\/collaborators$/) && method === 'POST') {
+      const postId = route.split('/')[2]
+      const tokenData = verifyToken(request)
+      const { collaboratorUserIds } = await request.json()
+      
+      if (!Array.isArray(collaboratorUserIds) || collaboratorUserIds.length === 0) {
+        return handleCORS(NextResponse.json(
+          { error: "Collaborator user IDs array is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Verify post exists and user owns it
+      const post = await db.collection('posts').findOne({ id: postId })
+      if (!post) {
+        return handleCORS(NextResponse.json(
+          { error: "Post not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      if (post.ownerUserId !== tokenData.userId) {
+        return handleCORS(NextResponse.json(
+          { error: "Only post owner can add collaborators" }, 
+          { status: 403 }
+        ))
+      }
+
+      // Check if post is already marked as collaboration
+      const wasCollaboration = post.isCollaboration
+
+      // Add collaborators (including owner)
+      const allCollaborators = [...new Set([post.ownerUserId, ...collaboratorUserIds])]
+      
+      // Insert collaborators
+      for (const userId of allCollaborators) {
+        await db.collection('post_collaborators').updateOne(
+          { postId, userId },
+          { $set: { postId, userId, createdAt: new Date() } },
+          { upsert: true }
+        )
+      }
+
+      // Mark post as collaboration
+      await db.collection('posts').updateOne(
+        { id: postId },
+        { $set: { isCollaboration: true } }
+      )
+
+      // Award points if this is the first time marking as collaboration
+      if (!wasCollaboration) {
+        for (const userId of allCollaborators) {
+          const engagement = {
+            id: uuidv4(),
+            userId,
+            postId,
+            type: 'collab',
+            points: 3,
+            status: 'credited',
+            createdAt: new Date()
+          }
+
+          await db.collection('engagements').insertOne(engagement)
+
+          // Update user total points
+          await db.collection('users').updateOne(
+            { id: userId },
+            { $inc: { totalPoints: 3 } }
+          )
+        }
+      }
+
+      return handleCORS(NextResponse.json({ 
+        message: "Collaborators added successfully",
+        pointsAwarded: wasCollaboration ? 0 : 3,
+        collaborators: allCollaborators
+      }))
+    }
+
+    // USER PROFILES
+
+    // Get user profile - GET /api/users/{username}
+    if (route.startsWith('/users/') && method === 'GET') {
+      const username = route.split('/')[2]
+      
+      const user = await db.collection('users').findOne({ username })
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+
+      // Get user's posts
+      const posts = await db.collection('posts')
+        .find({ ownerUserId: user.id })
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      // Add clip counts to posts
+      for (let post of posts) {
+        const clipCount = await db.collection('clips').countDocuments({ postId: post.id })
+        post.clipCount = clipCount
+      }
+
+      // Get clips made by user
+      const clips = await db.collection('clips')
+        .find({ creatorUserId: user.id })
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      // Add original post info to clips
+      for (let clip of clips) {
+        const originalPost = await db.collection('posts')
+          .findOne({ id: clip.postId }, { projection: { title: 1, thumbnailUrl: 1, provider: 1 } })
+        clip.originalPost = originalPost
+      }
+
+      // Get points breakdown
+      const pointsBreakdown = await db.collection('engagements').aggregate([
+        { $match: { userId: user.id } },
+        { $group: { _id: '$type', total: { $sum: '$points' }, count: { $sum: 1 } } }
+      ]).toArray()
+
+      const profile = {
+        user: {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          bio: user.bio,
+          totalPoints: user.totalPoints || 0,
+          createdAt: user.createdAt
+        },
+        posts,
+        clipsMade: clips,
+        pointsBreakdown: pointsBreakdown.reduce((acc, item) => {
+          acc[item._id] = { total: item.total, count: item.count }
+          return acc
+        }, {})
+      }
+
+      return handleCORS(NextResponse.json(profile))
+    }
+
+    // LEGACY COMPATIBILITY (keeping squad and collaboration finder)
 
     // Create squad - POST /api/squads
     if (route === '/squads' && method === 'POST') {
@@ -632,182 +1030,6 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(squad))
     }
 
-    // POST ROUTES
-
-    // Create post - POST /api/posts
-    if (route === '/posts' && method === 'POST') {
-      const tokenData = verifyToken(request)
-      const { url, squadId, userId } = await request.json()
-      
-      if (!url || !squadId || !userId) {
-        return handleCORS(NextResponse.json(
-          { error: "URL, squad ID, and user ID are required" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Fetch URL metadata with caching
-      const metadata = await fetchUrlMetadata(url)
-
-      // Get user info
-      const user = await db.collection('users').findOne({ id: userId })
-
-      const post = {
-        id: uuidv4(),
-        url,
-        squadId,
-        userId,
-        authorName: user?.displayName || 'Unknown',
-        title: metadata.title,
-        description: metadata.description,
-        thumbnail: metadata.thumbnail,
-        platform: metadata.platform,
-        platformIcon: metadata.platformIcon,
-        createdAt: new Date(),
-        engagements: []
-      }
-
-      await db.collection('posts').insertOne(post)
-      return handleCORS(NextResponse.json(post))
-    }
-
-    // Get squad posts - GET /api/posts/squad/{squadId}
-    if (route.startsWith('/posts/squad/') && method === 'GET') {
-      const squadId = route.split('/')[3]
-      
-      const posts = await db.collection('posts')
-        .find({ squadId })
-        .sort({ createdAt: -1 })
-        .limit(50)
-        .toArray()
-
-      // Get engagements for each post
-      for (let post of posts) {
-        const engagements = await db.collection('engagements')
-          .find({ postId: post.id })
-          .toArray()
-        post.engagements = engagements
-      }
-
-      return handleCORS(NextResponse.json(posts))
-    }
-
-    // ENGAGEMENT ROUTES
-
-    // Track engagement click - POST /api/engagements/click
-    if (route === '/engagements/click' && method === 'POST') {
-      const tokenData = verifyToken(request)
-      const { postId, userId, type, redirectUrl } = await request.json()
-      
-      if (!postId || !userId || !type || !redirectUrl) {
-        return handleCORS(NextResponse.json(
-          { error: "Post ID, user ID, type, and redirect URL are required" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Check if user already clicked within 24 hours
-      const existingClick = await db.collection('engagement_clicks').findOne({
-        postId,
-        userId,
-        type,
-        clickedAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      })
-
-      if (existingClick) {
-        return handleCORS(NextResponse.json(
-          { message: "Already tracked", redirectUrl }, 
-          { status: 200 }
-        ))
-      }
-
-      // Record the click
-      const click = {
-        id: uuidv4(),
-        postId,
-        userId,
-        type,
-        clickedAt: new Date(),
-        redirectUrl
-      }
-
-      await db.collection('engagement_clicks').insertOne(click)
-
-      return handleCORS(NextResponse.json({ 
-        message: "Click tracked", 
-        redirectUrl 
-      }))
-    }
-
-    // Verify engagement and award credits - POST /api/engagements/verify
-    if (route === '/engagements/verify' && method === 'POST') {
-      const tokenData = verifyToken(request)
-      const { postId, userId, type, verificationData } = await request.json()
-      
-      // For now, we'll implement a simple verification
-      // In production, this would integrate with platform APIs
-      
-      // Check if user already earned credits for this post in the last 24h
-      const existingEngagement = await db.collection('engagements').findOne({
-        postId,
-        userId,
-        type,
-        createdAt: { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-      })
-
-      if (existingEngagement) {
-        return handleCORS(NextResponse.json(
-          { error: "Credits already earned for this engagement" }, 
-          { status: 400 }
-        ))
-      }
-
-      const engagement = {
-        id: uuidv4(),
-        postId,
-        userId,
-        type,
-        verified: true,
-        verificationData,
-        createdAt: new Date()
-      }
-
-      await db.collection('engagements').insertOne(engagement)
-
-      // Award credits
-      const creditsEarned = type === 'like' ? 1 : type === 'comment' ? 2 : 3
-      await db.collection('users').updateOne(
-        { id: userId },
-        { $inc: { credits: creditsEarned } }
-      )
-
-      return handleCORS(NextResponse.json({ 
-        engagement, 
-        creditsEarned 
-      }))
-    }
-
-    // CREDITS ROUTES
-
-    // Get user credits - GET /api/credits/{userId}
-    if (route.startsWith('/credits/') && method === 'GET') {
-      const userId = route.split('/')[2]
-      const user = await db.collection('users').findOne({ id: userId })
-      
-      if (!user) {
-        return handleCORS(NextResponse.json(
-          { error: "User not found" }, 
-          { status: 404 }
-        ))
-      }
-
-      return handleCORS(NextResponse.json({ 
-        balance: user.credits || 0 
-      }))
-    }
-
-    // COLLABORATION ROUTES
-
     // Get collaboration matches - GET /api/collaborations/matches/{userId}
     if (route.startsWith('/collaborations/matches/') && method === 'GET') {
       const userId = route.split('/')[3]
@@ -832,6 +1054,7 @@ async function handleRoute(request, { params }) {
         return {
           id: user.id,
           displayName: user.displayName,
+          username: user.username,
           bio: user.bio,
           platforms: user.platforms || [],
           niches: user.niches || [],
