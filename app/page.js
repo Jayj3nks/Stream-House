@@ -247,7 +247,8 @@ export default function App() {
         await loadMyHouses()
         await loadHouseSummary()
         
-        // Auto-switch to new house
+        // The backend automatically sets this as active house
+        // Create a temporary house object for immediate UI update
         const newHouse = {
           houseId: data.id,
           name: data.name,
@@ -256,7 +257,17 @@ export default function App() {
           activePosts24h: 0,
           isActive: true
         }
+        
+        // Update the houses list to mark this as active
+        setMyHouses(prev => prev.map(h => ({
+          ...h,
+          isActive: h.houseId === data.id
+        })))
+        
         setActiveHouse(newHouse)
+        
+        // Load the feed for the new house
+        loadHouseFeed()
         
         toast({
           title: "House created!",
