@@ -1018,20 +1018,20 @@ class CreatorSquadAPITester:
             if 'Verification code sent' in verify_result.get('message', ''):
                 results.append("Password verification: ✅")
                 
-                # Test 2: Verify email code (simulate with a mock code)
-                # In real testing, we'd need to capture the actual code from logs
+                # Test 2: Verify email code endpoint (test with invalid code to verify endpoint works)
                 verify_code_data = {
-                    "emailCode": "123456"  # This will fail, but we test the endpoint
+                    "emailCode": "000000"  # Invalid code to test error handling
                 }
                 
                 code_response = self.make_request('POST', '/settings/password/verify-code', verify_code_data, auth_required=True)
-                if code_response and code_response.status_code in [200, 400]:  # 400 expected for invalid code
-                    if code_response.status_code == 400 and 'Invalid or expired' in code_response.json().get('error', ''):
+                if code_response and code_response.status_code == 400:
+                    code_result = code_response.json()
+                    if 'Invalid or expired' in code_result.get('error', ''):
                         results.append("Code verification endpoint: ✅")
                     else:
-                        results.append("Code verification endpoint: ❌")
+                        results.append("Code verification endpoint: ❌ (wrong error message)")
                 else:
-                    results.append("Code verification endpoint: ❌")
+                    results.append("Code verification endpoint: ❌ (wrong status)")
             else:
                 results.append("Password verification: ❌")
         else:
@@ -1065,20 +1065,21 @@ class CreatorSquadAPITester:
             if 'Confirmation code sent' in email_code_result.get('message', ''):
                 results.append("Email change code: ✅")
                 
-                # Test 5: Confirm email change (will fail with mock code, but tests endpoint)
+                # Test 5: Confirm email change endpoint (test with invalid code to verify endpoint works)
                 confirm_email_data = {
                     "newEmail": email_code_data["newEmail"],
-                    "confirmationCode": "123456"  # Mock code
+                    "confirmationCode": "000000"  # Invalid code to test error handling
                 }
                 
                 confirm_response = self.make_request('POST', '/settings/email/confirm', confirm_email_data, auth_required=True)
-                if confirm_response and confirm_response.status_code in [200, 400]:  # 400 expected for invalid code
-                    if confirm_response.status_code == 400 and 'Invalid or expired' in confirm_response.json().get('error', ''):
+                if confirm_response and confirm_response.status_code == 400:
+                    confirm_result = confirm_response.json()
+                    if 'Invalid or expired' in confirm_result.get('error', ''):
                         results.append("Email confirmation endpoint: ✅")
                     else:
-                        results.append("Email confirmation endpoint: ❌")
+                        results.append("Email confirmation endpoint: ❌ (wrong error message)")
                 else:
-                    results.append("Email confirmation endpoint: ❌")
+                    results.append("Email confirmation endpoint: ❌ (wrong status)")
             else:
                 results.append("Email change code: ❌")
         else:
