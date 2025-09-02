@@ -37,31 +37,39 @@ class StreamerHouseAPITester:
             print(f"  Expected: {expected}")
             print(f"  Actual: {actual}")
     
-    def make_request(self, method, endpoint, data=None, headers=None):
-        """Make HTTP request with proper error handling"""
-        url = f"{API_BASE}{endpoint}"
-        
-        # Add auth header if token exists
-        if self.auth_token and headers is None:
-            headers = {}
-        if self.auth_token:
-            headers = headers or {}
-            headers['Authorization'] = f'Bearer {self.auth_token}'
-        
+    def setup_test_user(self):
+        """Create a test user and authenticate"""
         try:
-            if method.upper() == 'GET':
-                response = self.session.get(url, headers=headers, timeout=30)
-            elif method.upper() == 'POST':
-                response = self.session.post(url, json=data, headers=headers, timeout=30)
-            elif method.upper() == 'DELETE':
-                response = self.session.delete(url, headers=headers, timeout=30)
-            else:
-                raise ValueError(f"Unsupported method: {method}")
+            # Create test user with detailed signup
+            signup_data = {
+                "email": f"testuser_{int(time.time())}@example.com",
+                "password": "testpassword123",
+                "displayName": "Test User Profile",
+                "platforms": ["YouTube", "Twitch"],
+                "niches": ["Gaming", "Tech"],
+                "games": ["Minecraft", "Valorant"],
+                "city": "New York",
+                "timeZone": "America/New_York",
+                "hasSchedule": True,
+                "schedule": {"monday": "9-17", "tuesday": "9-17"},
+                "bio": "Test user for API testing"
+            }
             
-            return response
-        except requests.exceptions.RequestException as e:
-            print(f"Request error for {method} {endpoint}: {e}")
-            return None
+            response = self.session.post(f"{API_BASE}/auth/signup", json=signup_data)
+            if response.status_code == 200:
+                data = response.json()
+                self.auth_token = data['token']
+                self.test_user_id = data['user']['id']
+                self.test_username = data['user']['username']
+                self.session.headers.update({'Authorization': f'Bearer {self.auth_token}'})
+                print(f"✅ Test user created: {self.test_username}")
+                return True
+            else:
+                print(f"❌ Failed to create test user: {response.status_code} - {response.text}")
+                return False
+        except Exception as e:
+            print(f"❌ Error creating test user: {e}")
+            return False
     
     def test_api_root(self):
         """Test API root endpoint"""
