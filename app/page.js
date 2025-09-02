@@ -5,20 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Heart, MessageCircle, Share, Users, Target, Trophy, Calendar, Bell, Search, Settings } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
+import { Plus, Users, Target, Trophy, Search, Settings, ExternalLink, Scissors, UserPlus, Play } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [currentSquad, setCurrentSquad] = useState(null)
   const [posts, setPosts] = useState([])
-  const [userCredits, setUserCredits] = useState(0)
   const [loading, setLoading] = useState(false)
   const [showAuth, setShowAuth] = useState(true)
   const { toast } = useToast()
@@ -37,10 +35,18 @@ export default function App() {
   const [squadName, setSquadName] = useState('')
   const [showCreateSquad, setShowCreateSquad] = useState(false)
 
+  // Clip creation
+  const [showCreateClip, setShowCreateClip] = useState({})
+  const [clipUrl, setClipUrl] = useState('')
+  const [selectedPostId, setSelectedPostId] = useState(null)
+
+  // Collaboration
+  const [showAddCollaborators, setShowAddCollaborators] = useState({})
+  const [collaboratorEmails, setCollaboratorEmails] = useState('')
+
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (token) {
-      // Verify token and load user data
       loadUserData(token)
     }
   }, [])
@@ -55,7 +61,6 @@ export default function App() {
         setUser(userData)
         setShowAuth(false)
         loadSquadData(userData.id, token)
-        loadUserCredits(userData.id, token)
       } else {
         localStorage.removeItem('token')
       }
@@ -95,20 +100,6 @@ export default function App() {
     }
   }
 
-  const loadUserCredits = async (userId, token) => {
-    try {
-      const response = await fetch(`/api/credits/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (response.ok) {
-        const creditsData = await response.json()
-        setUserCredits(creditsData.balance)
-      }
-    } catch (error) {
-      console.error('Error loading credits:', error)
-    }
-  }
-
   const handleAuth = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -133,10 +124,9 @@ export default function App() {
         setShowAuth(false)
         toast({
           title: isSignUp ? "Account created!" : "Welcome back!",
-          description: "You've successfully logged in."
+          description: `You now have ${data.user.totalPoints || 0} points.`
         })
         loadSquadData(data.user.id, data.token)
-        loadUserCredits(data.user.id, data.token)
       } else {
         toast({
           title: "Error",
@@ -191,7 +181,7 @@ export default function App() {
   }
 
   const addPost = async () => {
-    if (!newPostUrl.trim() || !currentSquad) return
+    if (!newPostUrl.trim()) return
 
     setLoading(true)
     try {
@@ -203,8 +193,7 @@ export default function App() {
         },
         body: JSON.stringify({
           url: newPostUrl,
-          squadId: currentSquad.id,
-          userId: user.id
+          squadId: currentSquad?.id
         })
       })
 
@@ -229,51 +218,29 @@ export default function App() {
     }
   }
 
-  const handleEngagement = async (postId, type, postUrl, platform) => {
-    try {
-      // First track the click
-      const clickResponse = await fetch('/api/engagements/click', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          postId,
-          userId: user.id,
-          type,
-          redirectUrl: postUrl
-        })
-      })
+  const handleEngage = (postId) => {
+    // Open engage redirect in new tab
+    const engageUrl = `/api/r/${postId}?u=${user.id}`
+    window.open(engageUrl, '_blank')
+    
+    toast({
+      title: "Engagement credited!",
+      description: "+1 point for engaging with content."
+    })
 
-      if (clickResponse.ok) {
-        // Open the native platform post
-        window.open(postUrl, '_blank')
-        
-        // Show verification dialog after a delay
-        setTimeout(() => {
-          const userConfirmed = window.confirm(
-            `Did you successfully ${type === 'like' ? 'like' : type === 'comment' ? 'comment on' : 'share'} this ${platform} post?\n\nClick OK to earn credits, or Cancel if you didn't engage.`
-          )
-          
-          if (userConfirmed) {
-            // Verify engagement and award credits
-            verifyEngagement(postId, type, postUrl)
-          }
-        }, 3000) // 3 second delay to allow platform interaction
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to track engagement.",
-        variant: "destructive"
-      })
-    }
+    // Update user points optimistically
+    setUser(prev => ({
+      ...prev,
+      totalPoints: (prev.totalPoints || 0) + 1
+    }))
   }
 
-  const verifyEngagement = async (postId, type, postUrl) => {
+  const createClip = async (postId) => {
+    if (!clipUrl.trim()) return
+
+    setLoading(true)
     try {
-      const response = await fetch('/api/engagements/verify', {
+      const response = await fetch('/api/clips', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,51 +248,98 @@ export default function App() {
         },
         body: JSON.stringify({
           postId,
-          userId: user.id,
-          type,
-          verificationData: { url: postUrl, timestamp: new Date().toISOString() }
+          clipUrl,
+          source: 'url'
         })
       })
 
       if (response.ok) {
         const data = await response.json()
         
-        // Update posts with new engagement
+        // Update post clip count
         setPosts(prev => prev.map(post => {
           if (post.id === postId) {
-            return {
-              ...post,
-              engagements: [...(post.engagements || []), data.engagement]
-            }
+            return { ...post, clipCount: (post.clipCount || 0) + 1 }
           }
           return post
         }))
 
-        // Update credits
-        setUserCredits(prev => prev + data.creditsEarned)
+        // Update user points
+        setUser(prev => ({
+          ...prev,
+          totalPoints: (prev.totalPoints || 0) + 2
+        }))
 
+        setClipUrl('')
+        setShowCreateClip(prev => ({ ...prev, [postId]: false }))
         toast({
-          title: `+${data.creditsEarned} credits earned!`,
-          description: `Thanks for ${type === 'like' ? 'liking' : type === 'comment' ? 'commenting on' : 'sharing'} this ${post.platform} post!`
+          title: "Clip saved!",
+          description: "+2 points for creating a clip."
         })
-      } else {
-        const errorData = await response.json()
-        if (errorData.error.includes('already earned')) {
-          toast({
-            title: "Already earned credits",
-            description: "You've already earned credits for this engagement today.",
-            variant: "default"
-          })
-        } else {
-          throw new Error(errorData.error)
-        }
       }
     } catch (error) {
       toast({
-        title: "Verification failed",
-        description: "Could not verify your engagement. No credits awarded.",
+        title: "Error",
+        description: "Failed to create clip.",
         variant: "destructive"
       })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addCollaborators = async (postId) => {
+    if (!collaboratorEmails.trim()) return
+
+    // For demo, we'll just mark it as collaboration
+    // In real app, you'd resolve emails to user IDs
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/posts/${postId}/collaborators`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          collaboratorUserIds: [] // Demo: empty for now
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Update post to show as collaboration
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            return { ...post, isCollaboration: true }
+          }
+          return post
+        }))
+
+        // Update user points
+        if (data.pointsAwarded > 0) {
+          setUser(prev => ({
+            ...prev,
+            totalPoints: (prev.totalPoints || 0) + 3
+          }))
+        }
+
+        setCollaboratorEmails('')
+        setShowAddCollaborators(prev => ({ ...prev, [postId]: false }))
+        toast({
+          title: "Collaboration saved!",
+          description: data.pointsAwarded > 0 ? "+3 points to collaborators." : "Already marked as collaboration."
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add collaborators.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -334,7 +348,6 @@ export default function App() {
     setUser(null)
     setCurrentSquad(null)
     setPosts([])
-    setUserCredits(0)
     setShowAuth(true)
   }
 
@@ -343,7 +356,7 @@ export default function App() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-purple-600">CreatorSquad</CardTitle>
+            <CardTitle className="text-2xl font-bold text-purple-600">CreatorSquad v2</CardTitle>
             <CardDescription>
               {isSignUp ? "Create your account" : "Welcome back!"}
             </CardDescription>
@@ -417,7 +430,7 @@ export default function App() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-purple-600">CreatorSquad</h1>
+            <h1 className="text-2xl font-bold text-purple-600">CreatorSquad v2</h1>
             {currentSquad && (
               <Badge variant="secondary" className="flex items-center space-x-1">
                 <Users className="h-3 w-3" />
@@ -428,7 +441,7 @@ export default function App() {
           <div className="flex items-center space-x-4">
             <Badge variant="outline" className="flex items-center space-x-1">
               <Trophy className="h-3 w-3" />
-              <span>{userCredits} credits</span>
+              <span>{user?.totalPoints || 0} points</span>
             </Badge>
             <Button 
               variant="outline" 
@@ -445,6 +458,14 @@ export default function App() {
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.location.href = `/profile/${user?.username}`}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Profile
             </Button>
             <Avatar>
               <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
@@ -507,7 +528,7 @@ export default function App() {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Plus className="h-5 w-5" />
-                    <span>Drop New Post</span>
+                    <span>Share Content</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -545,98 +566,163 @@ export default function App() {
 
               {/* Posts Feed */}
               <div className="space-y-4">
-                {posts.map((post) => {
-                  const engagements = post.engagements || []
-                  const likesCount = engagements.filter(e => e.type === 'like').length
-                  const commentsCount = engagements.filter(e => e.type === 'comment').length
-                  const sharesCount = engagements.filter(e => e.type === 'share').length
-                  const totalEngagements = engagements.length
-                  const targetEngagements = currentSquad?.memberCount ? currentSquad.memberCount - 1 : 5
-                  const progress = Math.min((totalEngagements / targetEngagements) * 100, 100)
-
-                  return (
-                    <Card key={post.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarFallback>{post.authorName?.[0]?.toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{post.authorName}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(post.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
+                {posts.map((post) => (
+                  <Card key={post.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar>
+                            <AvatarFallback>{post.authorName?.[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{post.authorName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(post.createdAt).toLocaleDateString()} • {post.provider}
+                            </p>
                           </div>
-                          <Badge variant="outline">{post.platform}</Badge>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{post.provider}</Badge>
+                          {post.isCollaboration && (
+                            <Badge className="bg-purple-100 text-purple-800">Collab</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-start space-x-4">
+                        {post.thumbnailUrl && (
+                          <img 
+                            src={post.thumbnailUrl} 
+                            alt={post.title}
+                            className="w-24 h-24 object-cover rounded-lg"
+                          />
+                        )}
+                        <div className="flex-1">
                           <h3 className="font-medium mb-2">{post.title}</h3>
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={post.url} target="_blank" rel="noopener noreferrer">
-                              Open Content
-                            </a>
+                          {post.description && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {post.description.slice(0, 150)}...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex space-x-2">
+                          {/* Primary Engage Button */}
+                          <Button
+                            onClick={() => handleEngage(post.id)}
+                            className="flex items-center space-x-2"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            <span>Engage (+1 pt)</span>
                           </Button>
+
+                          {/* Create Clip Button (only if not owner) */}
+                          {post.ownerUserId !== user.id && (
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowCreateClip(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                              className="flex items-center space-x-2"
+                            >
+                              <Scissors className="h-4 w-4" />
+                              <span>Create Clip (+2 pts)</span>
+                            </Button>
+                          )}
+
+                          {/* Mark as Collaboration (only if owner) */}
+                          {post.ownerUserId === user.id && !post.isCollaboration && (
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                              className="flex items-center space-x-2"
+                            >
+                              <UserPlus className="h-4 w-4" />
+                              <span>Add Collaborators (+3 pts)</span>
+                            </Button>
+                          )}
                         </div>
 
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span>Team Engagement</span>
-                            <span>{totalEngagements}/{targetEngagements}</span>
+                        {/* Clip Counter */}
+                        {(post.clipCount || 0) > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center space-x-1"
+                          >
+                            <Play className="h-4 w-4" />
+                            <span>Clips: {post.clipCount}</span>
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Clip Creation Form */}
+                      {showCreateClip[post.id] && (
+                        <div className="space-y-3 p-4 bg-muted rounded-lg">
+                          <div className="space-y-2">
+                            <Label htmlFor={`clipUrl-${post.id}`}>Clip URL</Label>
+                            <Input
+                              id={`clipUrl-${post.id}`}
+                              value={clipUrl}
+                              onChange={(e) => setClipUrl(e.target.value)}
+                              placeholder="https://tiktok.com/@you/video/your-clip"
+                            />
                           </div>
-                          <Progress value={progress} className="h-2" />
-                        </div>
-
-                        <Separator />
-
-                        <div className="flex items-center justify-between">
                           <div className="flex space-x-2">
-                            <Button
-                              variant="ghost"
+                            <Button 
+                              onClick={() => createClip(post.id)} 
+                              disabled={loading || !clipUrl.trim()}
                               size="sm"
-                              onClick={() => handleEngagement(post.id, 'like', post.url, post.platform)}
-                              className="flex items-center space-x-1"
                             >
-                              <Heart className="h-4 w-4" />
-                              <span>Like on {post.platform}</span>
+                              Save Clip
                             </Button>
-                            <Button
-                              variant="ghost"
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setShowCreateClip(prev => ({ ...prev, [post.id]: false }))}
                               size="sm"
-                              onClick={() => handleEngagement(post.id, 'comment', post.url, post.platform)}
-                              className="flex items-center space-x-1"
                             >
-                              <MessageCircle className="h-4 w-4" />
-                              <span>Comment on {post.platform}</span>
+                              Cancel
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEngagement(post.id, 'share', post.url, post.platform)}
-                              className="flex items-center space-x-1"
-                            >
-                              <Share className="h-4 w-4" />
-                              <span>Share on {post.platform}</span>
-                            </Button>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="text-sm text-muted-foreground">
-                              👍 {likesCount} 💬 {commentsCount} 🔄 {sharesCount}
-                            </div>
-                            {progress >= 100 && (
-                              <Badge variant="success" className="bg-green-100 text-green-800">
-                                Complete!
-                              </Badge>
-                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                      )}
+
+                      {/* Add Collaborators Form */}
+                      {showAddCollaborators[post.id] && (
+                        <div className="space-y-3 p-4 bg-muted rounded-lg">
+                          <div className="space-y-2">
+                            <Label htmlFor={`collabEmails-${post.id}`}>Collaborator Emails</Label>
+                            <Input
+                              id={`collabEmails-${post.id}`}
+                              value={collaboratorEmails}
+                              onChange={(e) => setCollaboratorEmails(e.target.value)}
+                              placeholder="user1@email.com, user2@email.com"
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button 
+                              onClick={() => addCollaborators(post.id)} 
+                              disabled={loading}
+                              size="sm"
+                            >
+                              Add Collaborators
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: false }))}
+                              size="sm"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
 
                 {posts.length === 0 && (
                   <Card>
@@ -654,22 +740,22 @@ export default function App() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Credits Card */}
+              {/* Points Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Trophy className="h-5 w-5" />
-                    <span>Your Credits</span>
+                    <span>Your Points</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-600 mb-2">
-                    {userCredits}
+                  <div className="text-3xl font-bold text-purple-600 mb-4">
+                    {user?.totalPoints || 0}
                   </div>
                   <div className="text-sm text-muted-foreground space-y-1">
-                    <p>💜 Like = +1 credit</p>
-                    <p>💬 Comment = +2 credits</p>
-                    <p>🔄 Share = +3 credits</p>
+                    <p>🔗 Engage = +1 point</p>
+                    <p>✂️ Create Clip = +2 points</p>
+                    <p>🤝 Collaborate = +3 points</p>
                   </div>
                 </CardContent>
               </Card>
@@ -693,44 +779,41 @@ export default function App() {
                       <span className="font-medium">{posts.length}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Total Engagements</span>
+                      <span className="text-sm">Total Clips</span>
                       <span className="font-medium">
-                        {posts.reduce((acc, post) => acc + (post.engagements?.length || 0), 0)}
+                        {posts.reduce((acc, post) => acc + (post.clipCount || 0), 0)}
                       </span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Accountability */}
+              {/* Quick Actions */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Target className="h-5 w-5" />
-                    <span>Daily Goals</span>
+                    <span>Quick Actions</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Engagements Today</span>
-                      <span className="font-medium">
-                        {posts.reduce((acc, post) => {
-                          const userEngagements = post.engagements?.filter(e => e.userId === user.id).length || 0
-                          return acc + userEngagements
-                        }, 0)} / 5
-                      </span>
-                    </div>
-                    <Progress 
-                      value={Math.min((posts.reduce((acc, post) => {
-                        const userEngagements = post.engagements?.filter(e => e.userId === user.id).length || 0
-                        return acc + userEngagements
-                      }, 0) / 5) * 100, 100)} 
-                      className="h-2" 
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Keep supporting your squad to maintain your streak!
-                    </p>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => window.location.href = `/profile/${user?.username}`}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      View My Profile
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => window.location.href = '/collaborations'}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Find Collaborators
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
