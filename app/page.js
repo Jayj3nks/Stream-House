@@ -9,13 +9,16 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { Plus, Users, Target, Trophy, Search, Settings, ExternalLink, Scissors, UserPlus, Play } from 'lucide-react'
+import { Plus, Users, Target, Trophy, Search, Settings, ExternalLink, Scissors, UserPlus, Play, Trash2, Home, MessageSquare, UserMinus } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState(null)
-  const [currentSquad, setCurrentSquad] = useState(null)
+  const [currentHouse, setCurrentHouse] = useState(null)
+  const [houseMembers, setHouseMembers] = useState([])
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
   const [showAuth, setShowAuth] = useState(true)
@@ -31,18 +34,21 @@ export default function App() {
   const [newPostUrl, setNewPostUrl] = useState('')
   const [showNewPost, setShowNewPost] = useState(false)
 
-  // Squad creation
-  const [squadName, setSquadName] = useState('')
-  const [showCreateSquad, setShowCreateSquad] = useState(false)
+  // House creation
+  const [houseName, setHouseName] = useState('')
+  const [showCreateHouse, setShowCreateHouse] = useState(false)
 
   // Clip creation
   const [showCreateClip, setShowCreateClip] = useState({})
   const [clipUrl, setClipUrl] = useState('')
-  const [selectedPostId, setSelectedPostId] = useState(null)
 
   // Collaboration
   const [showAddCollaborators, setShowAddCollaborators] = useState({})
-  const [collaboratorEmails, setCollaboratorEmails] = useState('')
+  const [selectedCollaborators, setSelectedCollaborators] = useState([])
+
+  // Kick vote state
+  const [showKickVote, setShowKickVote] = useState(false)
+  const [kickTarget, setKickTarget] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -60,7 +66,7 @@ export default function App() {
         const userData = await response.json()
         setUser(userData)
         setShowAuth(false)
-        loadSquadData(userData.id, token)
+        loadHouseData(userData.id, token)
       } else {
         localStorage.removeItem('token')
       }
@@ -69,26 +75,41 @@ export default function App() {
     }
   }
 
-  const loadSquadData = async (userId, token) => {
+  const loadHouseData = async (userId, token) => {
     try {
-      const response = await fetch(`/api/squads/user/${userId}`, {
+      const response = await fetch(`/api/houses/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
-        const squad = await response.json()
-        setCurrentSquad(squad)
-        if (squad) {
-          loadSquadPosts(squad.id, token)
+        const house = await response.json()
+        setCurrentHouse(house)
+        if (house) {
+          loadHousePosts(house.id, token)
+          loadHouseMembers(house.id, token)
         }
       }
     } catch (error) {
-      console.error('Error loading squad data:', error)
+      console.error('Error loading house data:', error)
     }
   }
 
-  const loadSquadPosts = async (squadId, token) => {
+  const loadHouseMembers = async (houseId, token) => {
     try {
-      const response = await fetch(`/api/posts/squad/${squadId}`, {
+      const response = await fetch(`/api/houses/${houseId}/members`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.ok) {
+        const members = await response.json()
+        setHouseMembers(members)
+      }
+    } catch (error) {
+      console.error('Error loading house members:', error)
+    }
+  }
+
+  const loadHousePosts = async (houseId, token) => {
+    try {
+      const response = await fetch(`/api/posts/house/${houseId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
@@ -126,7 +147,7 @@ export default function App() {
           title: isSignUp ? "Account created!" : "Welcome back!",
           description: `You now have ${data.user.totalPoints || 0} points.`
         })
-        loadSquadData(data.user.id, data.token)
+        loadHouseData(data.user.id, data.token)
       } else {
         toast({
           title: "Error",
@@ -145,34 +166,34 @@ export default function App() {
     }
   }
 
-  const createSquad = async () => {
-    if (!squadName.trim()) return
+  const createHouse = async () => {
+    if (!houseName.trim()) return
 
     setLoading(true)
     try {
-      const response = await fetch('/api/squads', {
+      const response = await fetch('/api/houses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ name: squadName, ownerId: user.id })
+        body: JSON.stringify({ name: houseName, ownerId: user.id })
       })
 
       if (response.ok) {
-        const squad = await response.json()
-        setCurrentSquad(squad)
-        setSquadName('')
-        setShowCreateSquad(false)
+        const house = await response.json()
+        setCurrentHouse(house)
+        setHouseName('')
+        setShowCreateHouse(false)
         toast({
-          title: "Squad created!",
-          description: `${squadName} is ready for collaborations.`
+          title: "House created!",
+          description: `${houseName} is ready for collaborations.`
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create squad.",
+        description: "Failed to create house.",
         variant: "destructive"
       })
     } finally {
@@ -193,7 +214,7 @@ export default function App() {
         },
         body: JSON.stringify({
           url: newPostUrl,
-          squadId: currentSquad?.id
+          houseId: currentHouse?.id
         })
       })
 
@@ -204,7 +225,7 @@ export default function App() {
         setShowNewPost(false)
         toast({
           title: "Post shared!",
-          description: "Your content is now live in the squad."
+          description: "Your content is now live in the house."
         })
       }
     } catch (error) {
@@ -218,7 +239,17 @@ export default function App() {
     }
   }
 
-  const handleEngage = (postId) => {
+  const handleEngage = (postId, ownerId) => {
+    // Owner engage guard - hide engage on own posts
+    if (ownerId === user.id) {
+      toast({
+        title: "Cannot engage",
+        description: "You cannot engage with your own posts.",
+        variant: "destructive"
+      })
+      return
+    }
+
     // Open engage redirect in new tab
     const engageUrl = `/api/r/${postId}?u=${user.id}`
     window.open(engageUrl, '_blank')
@@ -289,10 +320,8 @@ export default function App() {
   }
 
   const addCollaborators = async (postId) => {
-    if (!collaboratorEmails.trim()) return
+    if (selectedCollaborators.length === 0) return
 
-    // For demo, we'll just mark it as collaboration
-    // In real app, you'd resolve emails to user IDs
     setLoading(true)
     try {
       const response = await fetch(`/api/posts/${postId}/collaborators`, {
@@ -302,7 +331,7 @@ export default function App() {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          collaboratorUserIds: [] // Demo: empty for now
+          collaboratorUserIds: selectedCollaborators
         })
       })
 
@@ -325,7 +354,7 @@ export default function App() {
           }))
         }
 
-        setCollaboratorEmails('')
+        setSelectedCollaborators([])
         setShowAddCollaborators(prev => ({ ...prev, [postId]: false }))
         toast({
           title: "Collaboration saved!",
@@ -343,10 +372,73 @@ export default function App() {
     }
   }
 
+  const deletePost = async (postId) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      if (response.ok) {
+        setPosts(prev => prev.filter(post => post.id !== postId))
+        toast({
+          title: "Post deleted",
+          description: "Your post has been removed."
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete post.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const initializeKickVote = async () => {
+    if (!kickTarget) return
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/houses/${currentHouse.id}/votes/kick`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          targetUserId: kickTarget
+        })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Vote initiated",
+          description: "House members can now vote on this removal."
+        })
+        setShowKickVote(false)
+        setKickTarget('')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to initiate vote.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     setUser(null)
-    setCurrentSquad(null)
+    setCurrentHouse(null)
     setPosts([])
     setShowAuth(true)
   }
@@ -430,11 +522,11 @@ export default function App() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-purple-600">CreatorSquad v2</h1>
-            {currentSquad && (
+            <h1 className="text-2xl font-bold text-purple-600">Streamer House</h1>
+            {currentHouse && (
               <Badge variant="secondary" className="flex items-center space-x-1">
-                <Users className="h-3 w-3" />
-                <span>{currentSquad.name}</span>
+                <Home className="h-3 w-3" />
+                <span>{currentHouse.name}</span>
               </Badge>
             )}
           </div>
@@ -446,10 +538,10 @@ export default function App() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => window.location.href = '/collaborations'}
+              onClick={() => window.location.href = '/roommates'}
             >
               <Search className="h-4 w-4 mr-2" />
-              Find Collabs
+              Find Roommates
             </Button>
             <Button 
               variant="outline" 
@@ -468,6 +560,7 @@ export default function App() {
               Profile
             </Button>
             <Avatar>
+              <AvatarImage src={user?.profilePictureUrl} />
               <AvatarFallback>{user?.displayName?.[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             <Button variant="outline" size="sm" onClick={logout}>
@@ -478,38 +571,38 @@ export default function App() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {!currentSquad ? (
+        {!currentHouse ? (
           <Card className="max-w-md mx-auto">
             <CardHeader className="text-center">
-              <CardTitle>Create Your Squad</CardTitle>
+              <CardTitle>Create Your House</CardTitle>
               <CardDescription>
                 Start building your creator community
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {!showCreateSquad ? (
-                <Button onClick={() => setShowCreateSquad(true)} className="w-full">
+              {!showCreateHouse ? (
+                <Button onClick={() => setShowCreateHouse(true)} className="w-full">
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Squad
+                  Create House
                 </Button>
               ) : (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="squadName">Squad Name</Label>
+                    <Label htmlFor="houseName">House Name</Label>
                     <Input
-                      id="squadName"
-                      value={squadName}
-                      onChange={(e) => setSquadName(e.target.value)}
+                      id="houseName"
+                      value={houseName}
+                      onChange={(e) => setHouseName(e.target.value)}
                       placeholder="e.g., Fitness Creators"
                     />
                   </div>
                   <div className="flex space-x-2">
-                    <Button onClick={createSquad} disabled={loading} className="flex-1">
+                    <Button onClick={createHouse} disabled={loading} className="flex-1">
                       Create
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => setShowCreateSquad(false)}
+                      onClick={() => setShowCreateHouse(false)}
                       className="flex-1"
                     >
                       Cancel
@@ -572,6 +665,7 @@ export default function App() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar>
+                            <AvatarImage src={post.authorProfilePicture} />
                             <AvatarFallback>{post.authorName?.[0]?.toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
@@ -612,37 +706,84 @@ export default function App() {
 
                       <div className="flex items-center justify-between">
                         <div className="flex space-x-2">
-                          {/* Primary Engage Button */}
-                          <Button
-                            onClick={() => handleEngage(post.id)}
-                            className="flex items-center space-x-2"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            <span>Engage (+1 pt)</span>
-                          </Button>
+                          {/* Owner Actions */}
+                          {post.ownerUserId === user.id ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={() => window.open(post.canonicalUrl, '_blank')}
+                                className="flex items-center space-x-2"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Open</span>
+                              </Button>
 
-                          {/* Create Clip Button (only if not owner) */}
-                          {post.ownerUserId !== user.id && (
-                            <Button
-                              variant="outline"
-                              onClick={() => setShowCreateClip(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                              className="flex items-center space-x-2"
-                            >
-                              <Scissors className="h-4 w-4" />
-                              <span>Create Clip (+2 pts)</span>
-                            </Button>
-                          )}
+                              {!post.isCollaboration && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <UserPlus className="h-4 w-4" />
+                                  <span>Add Collaborators</span>
+                                </Button>
+                              )}
 
-                          {/* Mark as Collaboration (only if owner) */}
-                          {post.ownerUserId === user.id && !post.isCollaboration && (
-                            <Button
-                              variant="outline"
-                              onClick={() => setShowAddCollaborators(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                              className="flex items-center space-x-2"
-                            >
-                              <UserPlus className="h-4 w-4" />
-                              <span>Add Collaborators (+3 pts)</span>
-                            </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="flex items-center space-x-2 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span>Delete</span>
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this post? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deletePost(post.id)}>
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          ) : (
+                            /* Non-owner Actions */
+                            <>
+                              <Button
+                                onClick={() => handleEngage(post.id, post.ownerUserId)}
+                                className="flex items-center space-x-2"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Engage (+1 pt)</span>
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                onClick={() => window.open(post.canonicalUrl, '_blank')}
+                                className="flex items-center space-x-2"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Open</span>
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowCreateClip(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                                className="flex items-center space-x-2"
+                              >
+                                <Scissors className="h-4 w-4" />
+                                <span>Create Clip (+2 pts)</span>
+                              </Button>
+                            </>
                           )}
                         </div>
 
@@ -694,18 +835,27 @@ export default function App() {
                       {showAddCollaborators[post.id] && (
                         <div className="space-y-3 p-4 bg-muted rounded-lg">
                           <div className="space-y-2">
-                            <Label htmlFor={`collabEmails-${post.id}`}>Collaborator Emails</Label>
-                            <Input
-                              id={`collabEmails-${post.id}`}
-                              value={collaboratorEmails}
-                              onChange={(e) => setCollaboratorEmails(e.target.value)}
-                              placeholder="user1@email.com, user2@email.com"
-                            />
+                            <Label htmlFor={`collaborators-${post.id}`}>Select House Members</Label>
+                            <Select 
+                              value={selectedCollaborators.join(',')} 
+                              onValueChange={(value) => setSelectedCollaborators(value ? value.split(',') : [])}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose collaborators..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {houseMembers.filter(member => member.id !== user.id).map((member) => (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.displayName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div className="flex space-x-2">
                             <Button 
                               onClick={() => addCollaborators(post.id)} 
-                              disabled={loading}
+                              disabled={loading || selectedCollaborators.length === 0}
                               size="sm"
                             >
                               Add Collaborators
@@ -730,7 +880,7 @@ export default function App() {
                       <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <h3 className="text-lg font-medium mb-2">No posts yet</h3>
                       <p className="text-muted-foreground">
-                        Share your first post to get the squad engaged!
+                        Share your first post to get the house engaged!
                       </p>
                     </CardContent>
                   </Card>
@@ -760,19 +910,19 @@ export default function App() {
                 </CardContent>
               </Card>
 
-              {/* Squad Stats */}
+              {/* House Stats */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <Users className="h-5 w-5" />
-                    <span>Squad Stats</span>
+                    <Home className="h-5 w-5" />
+                    <span>House Stats</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm">Members</span>
-                      <span className="font-medium">{currentSquad?.memberCount || 1}</span>
+                      <span className="font-medium">{houseMembers.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Posts Today</span>
@@ -787,6 +937,28 @@ export default function App() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* House Management */}
+              {currentHouse?.ownerId === user?.id && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Settings className="h-5 w-5" />
+                      <span>House Management</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-red-600 hover:text-red-700"
+                      onClick={() => setShowKickVote(true)}
+                    >
+                      <UserMinus className="h-4 w-4 mr-2" />
+                      Initiate Kick Vote
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Quick Actions */}
               <Card>
@@ -809,10 +981,18 @@ export default function App() {
                     <Button 
                       variant="outline" 
                       className="w-full justify-start"
-                      onClick={() => window.location.href = '/collaborations'}
+                      onClick={() => window.location.href = '/roommates'}
                     >
                       <Search className="h-4 w-4 mr-2" />
-                      Find Collaborators
+                      Find Roommates
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={() => window.location.href = '/help'}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Help & Support
                     </Button>
                   </div>
                 </CardContent>
@@ -821,6 +1001,44 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {/* Kick Vote Dialog */}
+      {showKickVote && (
+        <AlertDialog open={showKickVote} onOpenChange={setShowKickVote}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Initiate Kick Vote</AlertDialogTitle>
+              <AlertDialogDescription>
+                Start a 48-hour vote to remove a member. Majority wins, target won't be notified.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="kickTarget">Select Member to Remove</Label>
+                <Select value={kickTarget} onValueChange={setKickTarget}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose member..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {houseMembers.filter(member => member.id !== user.id).map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={initializeKickVote} disabled={!kickTarget}>
+                Start Vote
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      
       <Toaster />
     </div>
   )
