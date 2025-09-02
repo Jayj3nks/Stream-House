@@ -122,9 +122,9 @@ function canonicalizeUrl(originalUrl, provider) {
         
       case 'tiktok':
         // Keep TikTok URLs but clean tracking params
-        const cleanUrl = new URL(originalUrl)
-        cleanUrl.search = '' // Remove all query params
-        return cleanUrl.toString()
+        const tiktokCleanUrl = new URL(originalUrl)
+        tiktokCleanUrl.search = '' // Remove all query params
+        return tiktokCleanUrl.toString()
         
       default:
         // For other platforms, strip common tracking params
