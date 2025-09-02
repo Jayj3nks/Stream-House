@@ -45,10 +45,16 @@ export default function ProfilePage({ params }) {
       if (response.ok) {
         const profileData = await response.json()
         setProfile(profileData)
-      } else {
+      } else if (response.status === 404) {
         toast({
           title: "Profile not found",
           description: "The user profile you're looking for doesn't exist.",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load profile.",
           variant: "destructive"
         })
       }
