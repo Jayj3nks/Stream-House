@@ -141,6 +141,7 @@ export default function ProfilePage({ params }) {
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
                 <Avatar className="w-20 h-20">
+                  <AvatarImage src={profile.user.profilePictureUrl} />
                   <AvatarFallback className="text-2xl">
                     {profile.user.displayName?.[0]?.toUpperCase()}
                   </AvatarFallback>
@@ -161,6 +162,28 @@ export default function ProfilePage({ params }) {
                   {profile.user.totalPoints}
                 </div>
                 <p className="text-sm text-muted-foreground">Total Points</p>
+                
+                {/* Points Summary */}
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-blue-50 p-2 rounded-lg">
+                    <div className="text-lg font-bold text-blue-600">
+                      {profile.pointsBreakdown.engage?.total || 0}
+                    </div>
+                    <p className="text-xs text-blue-600">Engage</p>
+                  </div>
+                  <div className="bg-green-50 p-2 rounded-lg">
+                    <div className="text-lg font-bold text-green-600">
+                      {profile.pointsBreakdown.clip?.total || 0}
+                    </div>
+                    <p className="text-xs text-green-600">Clips</p>
+                  </div>
+                  <div className="bg-purple-50 p-2 rounded-lg">
+                    <div className="text-lg font-bold text-purple-600">
+                      {profile.pointsBreakdown.collab?.total || 0}
+                    </div>
+                    <p className="text-xs text-purple-600">Collabs</p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardHeader>
