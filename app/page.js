@@ -444,7 +444,7 @@ export default function App() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-purple-600">Streamer House</CardTitle>
             <CardDescription>
-              {isSignUp ? "Join the house!" : "Welcome back to the house!"}
+              Welcome back to the house!
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -459,17 +459,6 @@ export default function App() {
                   required
                 />
               </div>
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -481,27 +470,20 @@ export default function App() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Processing..." : (isSignUp ? "Sign Up" : "Sign In")}
+                {loading ? "Processing..." : "Sign In"}
               </Button>
             </form>
             <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground mb-3">
+                Don't have an account?
+              </p>
               <Button 
-                variant="link" 
-                onClick={() => setIsSignUp(!isSignUp)}
+                variant="default" 
+                onClick={() => window.location.href = '/signup'}
+                className="w-full"
               >
-                {isSignUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
+                Create Account
               </Button>
-              {!isSignUp && (
-                <div className="mt-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => window.location.href = '/signup'}
-                    className="w-full"
-                  >
-                    Create Detailed Profile
-                  </Button>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
