@@ -51,16 +51,17 @@ class StreamerHouseAPITester:
         
         try:
             if method.upper() == 'GET':
-                response = self.session.get(url, headers=headers)
+                response = self.session.get(url, headers=headers, timeout=30)
             elif method.upper() == 'POST':
-                response = self.session.post(url, json=data, headers=headers)
+                response = self.session.post(url, json=data, headers=headers, timeout=30)
             elif method.upper() == 'DELETE':
-                response = self.session.delete(url, headers=headers)
+                response = self.session.delete(url, headers=headers, timeout=30)
             else:
                 raise ValueError(f"Unsupported method: {method}")
             
             return response
         except requests.exceptions.RequestException as e:
+            print(f"Request error for {method} {endpoint}: {e}")
             return None
     
     def test_api_root(self):
