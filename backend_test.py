@@ -23,20 +23,19 @@ class StreamerHouseAPITester:
         self.test_house_id = None
         self.results = []
         
-    def log_result(self, test_name, success, message, details=None):
-        """Log test result"""
-        status = "✅ PASS" if success else "❌ FAIL"
-        result = {
-            'test': test_name,
-            'success': success,
-            'message': message,
-            'details': details,
-            'timestamp': datetime.now().isoformat()
-        }
-        self.results.append(result)
-        print(f"{status}: {test_name} - {message}")
-        if details and not success:
-            print(f"   Details: {details}")
+    def log_result(self, test_name, endpoint, expected, actual, status):
+        """Log test result in the exact format requested"""
+        self.results.append({
+            'test_name': test_name,
+            'endpoint': endpoint,
+            'expected': expected,
+            'actual': actual,
+            'status': status
+        })
+        print(f"{'✅ PASS' if status == 'PASS' else '❌ FAIL'} - {test_name}")
+        if status == 'FAIL':
+            print(f"  Expected: {expected}")
+            print(f"  Actual: {actual}")
     
     def make_request(self, method, endpoint, data=None, headers=None):
         """Make HTTP request with proper error handling"""
