@@ -450,11 +450,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Complete Rebrand: Squad → House terminology"
+    - "Authentication System Fix"
+    - "Backend API Integration"
     - "Profile Picture Upload and Display System"
     - "Enhanced Post Management UI"
-    - "Find Roommates Page with Opt-in Toggle"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Authentication System - Login returns 401 errors"
+    - "Backend API Integration - Multiple endpoints failing"
   test_all: false
   test_priority: "high_first"
 
