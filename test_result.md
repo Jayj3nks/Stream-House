@@ -275,6 +275,75 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ PASSED - Enhanced user signup working correctly. Successfully stores platforms, niches, games, city, timeZone, hasSchedule, schedule, bio, and totalPoints fields. All extended profile data properly saved and returned."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED FIXED - Enhanced signup with all profile fields working perfectly. JWT token generation working. All extended profile fields (platforms, niches, games, city, timeZone, bio, schedule) properly stored and returned. Authentication system fully functional."
+
+  - task: "User Login and JWT Token Generation"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED FIXED - User login working perfectly with JWT token generation. Auth/me endpoint working correctly with token validation. Previously reported 401 'Invalid credentials' errors have been resolved."
+
+  - task: "Roommates API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ FAILED - Roommates page loads but fails to fetch data from API (/api/roommates returns 'Failed to fetch' error). UI structure is correct with proper filters and search functionality, but backend integration is broken."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED FIXED - /api/roommates endpoint now working correctly. Returns array of users with proper filtering. Roommate search visibility controls working. Previously reported 'Failed to fetch' errors have been resolved."
+
+  - task: "Users Username API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ FAILED - Profile page returns 404 error when accessing /api/users/testuser. Profile page structure exists but backend API integration is not working properly."
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED FIXED - /api/users/{username} endpoint now working correctly. Returns complete user profile with posts, clips made, and points breakdown. Previously reported 404 errors have been resolved."
+
+  - task: "Settings Roommate Search API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED FIXED - /api/settings/roommate-search endpoint working perfectly. Can toggle roommate search visibility (appearInRoommateSearch) successfully. Proper validation and response handling."
+
+  - task: "Media Upload API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ VERIFIED IMPLEMENTED - /api/media/upload endpoint implemented and working. Returns proper media URL and ID. Profile picture upload system functional with avatar URL generation."
 
 frontend:
   - task: "Complete Rebrand: Squad → House terminology"
