@@ -277,17 +277,113 @@ backend:
           comment: "✅ PASSED - Enhanced user signup working correctly. Successfully stores platforms, niches, games, city, timeZone, hasSchedule, schedule, bio, and totalPoints fields. All extended profile data properly saved and returned."
 
 frontend:
-  - task: "Frontend UI Components"
-    implemented: true
+  - task: "Complete Rebrand: Squad → House terminology"
+    implemented: false
+    working: "NA"
+    file: "/app/app/page.js, /app/app/layout.js, /app/app/signup/page.js"
+    stuck_count: 0
+    priority: "high" 
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Need to update all Squad references to House across all frontend files"
+
+  - task: "Profile Picture Upload and Display System"
+    implemented: false
+    working: "NA"
+    file: "/app/app/settings/page.js, /app/app/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implement profile picture upload in settings and display across UI using MediaRepo"
+
+  - task: "Enhanced Post Management UI"
+    implemented: false
+    working: "NA"
+    file: "/app/app/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Owner actions (Open, Add Collaborators, Delete) vs Non-owner actions (Engage, Open, Create Clip). Hide engage on own posts."
+
+  - task: "Silent Kick Vote System UI"
+    implemented: false
     working: "NA"
     file: "/app/app/page.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
-          agent: "testing"
-          comment: "Frontend testing not required as per instructions"
+          agent: "main"
+          comment: "48-hour voting window, majority rule, target not notified"
+
+  - task: "Group Message Board per House"
+    implemented: false
+    working: "NA" 
+    file: "/app/app/page.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Text-only board with replies, @mentions, rate limiting, owner/mod delete"
+
+  - task: "Find Roommates Page with Opt-in Toggle"
+    implemented: false
+    working: "NA"
+    file: "/app/app/roommates/page.js, /app/app/settings/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Replace Find Collabs with roommate finder, add settings toggle"
+
+  - task: "Enhanced Profile Page UX"
+    implemented: false
+    working: "NA"
+    file: "/app/app/profile/[username]/page.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Posts as cards with thumbnails, Upload/Create Clip buttons, Points summary"
+
+  - task: "Help/Bug Report System"
+    implemented: false
+    working: "NA"
+    file: "/app/app/help/page.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Form with screenshot upload, bug reports, ideas, abuse reporting"
+
+  - task: "Account Settings Enhancement"
+    implemented: false
+    working: "NA"
+    file: "/app/app/settings/page.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Email confirmation for email/password changes, profile picture upload"
 
 metadata:
   created_by: "testing_agent"
