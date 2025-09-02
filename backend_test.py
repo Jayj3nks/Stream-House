@@ -11,7 +11,15 @@ import os
 from datetime import datetime
 
 # Get base URL from environment
-BASE_URL = "http://localhost:3000/api"
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Use the public URL from environment
+NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://collabsquad.preview.emergentagent.com')
+BASE_URL = f"{NEXT_PUBLIC_BASE_URL}/api"
 
 class CreatorSquadAPITester:
     def __init__(self):
