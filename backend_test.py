@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Tests for CreatorSquad
-Tests all authentication, squad, post, engagement, and credits endpoints
+Comprehensive Backend API Tests for CreatorSquad v2
+Tests the new streamlined engagement, clips, and collaboration features
 """
 
 import requests
 import json
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Get base URL from environment
 import os
