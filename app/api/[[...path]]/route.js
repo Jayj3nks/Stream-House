@@ -1146,6 +1146,81 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(report))
     }
 
+    // SETTINGS ENDPOINTS
+
+    // Update roommate search visibility
+    if (route === '/settings/roommate-search' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { appearInRoommateSearch } = await request.json()
+      
+      const user = await userRepo.update(tokenData.userId, {
+        roommateSearchVisible: Boolean(appearInRoommateSearch)
+      })
+      
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+      
+      return handleCORS(NextResponse.json({
+        message: "Settings updated successfully",
+        appearInRoommateSearch: user.roommateSearchVisible
+      }))
+    }
+
+    // Update username
+    if (route === '/settings/username' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { newUsername, password } = await request.json()
+      
+      if (!newUsername || !password) {
+        return handleCORS(NextResponse.json(
+          { error: "Username and password are required" }, 
+          { status: 400 }
+        ))
+      }
+      
+      const user = await userRepo.getById(tokenData.userId)
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+      
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.passwordHash)
+      if (!isValidPassword) {
+        return handleCORS(NextResponse.json(
+          { error: "Invalid password" }, 
+          { status: 401 }
+        ))
+      }
+      
+      // Check if username is already taken
+      const baseUsername = newUsername.toLowerCase().replace(/[^a-z0-9]/g, '')
+      let username = baseUsername
+      let counter = 1
+      
+      while (await userRepo.getByUsername(username)) {
+        username = `${baseUsername}${counter}`
+        counter++
+      }
+      
+      const updatedUser = await userRepo.update(tokenData.userId, {
+        displayName: newUsername,
+        username: username
+      })
+      
+      return handleCORS(NextResponse.json({
+        message: "Username updated successfully",
+        displayName: updatedUser.displayName,
+        username: updatedUser.username
+      }))
+    }
+
     // Legacy compatibility routes (keep existing squad routes working)
     if (route === '/squads' && method === 'POST') {
       // Redirect to houses
