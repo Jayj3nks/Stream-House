@@ -142,7 +142,7 @@ export default function SignupPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-purple-600">Join Streamer House</CardTitle>
           <CardDescription>
-            Step {step} of 4 - Let's set up your creator profile
+            Step {step} of 4 - Create your detailed creator profile
           </CardDescription>
           <div className="flex justify-center mt-4">
             {[1, 2, 3, 4].map((stepNum) => (
