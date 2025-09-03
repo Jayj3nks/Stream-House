@@ -114,7 +114,9 @@ export default function SignupPage() {
           description: "Your account has been created successfully."
         })
         // Token is now set in HttpOnly cookie, redirect to dashboard
-        router.push('/dashboard')
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000) // Give time for toast to show
       } else {
         toast({
           title: "Error",
