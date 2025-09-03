@@ -22,34 +22,74 @@ A modern Next.js platform helping streamers and content creators organize into h
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 14, React, Tailwind CSS, shadcn/ui
-- **Backend**: Next.js API Routes, Node.js
-- **Database**: MongoDB with connection pooling
-- **Authentication**: JWT tokens with bcrypt password hashing
+- **Backend**: Next.js API Routes with catch-all routing
+- **Database**: MongoDB with in-memory repositories
+- **Authentication**: JWT tokens with HttpOnly cookies
 - **UI Components**: Radix UI primitives with shadcn/ui
-- **Styling**: Tailwind CSS with custom design system
+- **Styling**: Tailwind CSS with responsive design
 
-## 📦 Installation & Setup
+## 📦 Local Development Setup
 
-1. **Install dependencies**:
+### Prerequisites
+- Node.js 18+ 
+- MongoDB (local or cloud)
+- Yarn package manager
+
+### Quick Start
+1. **Clone and install dependencies**:
 ```bash
+git clone <your-repo>
+cd stream-house
 yarn install
 ```
 
-2. **Environment variables** (already configured):
+2. **Environment setup**:
 ```bash
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=creator_squad
-NEXT_PUBLIC_BASE_URL=https://streamhouse-fix.preview.emergentagent.com
+cp .env.example .env.local
 ```
 
-3. **Run the development server**:
+Edit `.env.local` with your values:
+```bash
+# Required
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=streamer_house
+JWT_SECRET=your-super-secret-jwt-key-here
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+# Optional - customize as needed
+CSQ_TIMEZONE=America/New_York
+CSQ_ENGAGE_DEDUP_HOURS=24
+```
+
+3. **Start development server**:
 ```bash
 yarn dev
 ```
 
 4. **Access the application**:
-   - Local: http://localhost:3000
-   - Production: https://streamhouse-fix.preview.emergentagent.com
+   - Open [http://localhost:3000](http://localhost:3000)
+   - Create an account or sign in
+   - You'll be redirected to the dashboard
+
+## 🚀 Vercel Deployment
+
+### Deploy to Vercel
+
+1. **Connect your repository** to Vercel
+2. **Add environment variables** in Vercel dashboard:
+   ```
+   MONGO_URL=your-mongodb-atlas-url
+   DB_NAME=streamer_house_prod
+   JWT_SECRET=your-production-jwt-secret
+   NEXT_PUBLIC_BASE_URL=https://your-app.vercel.app
+   ```
+
+3. **MongoDB Atlas Setup** (recommended):
+   - Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Get your connection string
+   - Add your Vercel IP to the allowlist (or use 0.0.0.0/0 for development)
+
+4. **Deploy** - Vercel will automatically deploy on push to main branch
 
 ## 🎮 How to Use
 
