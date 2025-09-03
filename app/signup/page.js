@@ -109,12 +109,12 @@ export default function SignupPage() {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('token', data.token)
         toast({
           title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
-        router.push('/')
+        // Token is now set in HttpOnly cookie, redirect to dashboard
+        router.push('/dashboard')
       } else {
         toast({
           title: "Error",
