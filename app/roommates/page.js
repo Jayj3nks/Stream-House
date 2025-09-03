@@ -306,53 +306,55 @@ export default function RoommatesPage() {
                       </Avatar>
                       <div className="flex-1">
                         <h3 className="font-semibold">{roommate.displayName || roommate.username || 'Anonymous'}</h3>
-                        {roommate.experience && (
-                          <Badge variant="outline" className="text-xs">
-                            {roommate.experience}
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {roommate.niche && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">NICHE</p>
-                        <Badge variant="secondary" className="text-xs">
-                          {roommate.niche}
-                        </Badge>
+                  <CardContent className="space-y-3">
+                    {roommate.city && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        <span>{roommate.city}</span>
                       </div>
                     )}
 
-                    {roommate.platforms && roommate.platforms.length > 0 && (
+                    {roommate.budget && (
+                      <div className="text-sm">
+                        <span className="font-medium">Budget:</span> ${roommate.budget}
+                      </div>
+                    )}
+
+                    {roommate.interests && roommate.interests.length > 0 && (
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">PLATFORMS</p>
+                        <div className="text-sm font-medium text-gray-700 mb-1">Interests:</div>
                         <div className="flex flex-wrap gap-1">
-                          {roommate.platforms.slice(0, 3).map((platform) => (
-                            <Badge key={platform} variant="outline" className="text-xs">
-                              {platform}
+                          {roommate.interests.slice(0, 3).map((interest, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {interest}
                             </Badge>
                           ))}
-                          {roommate.platforms.length > 3 && (
+                          {roommate.interests.length > 3 && (
                             <Badge variant="outline" className="text-xs">
-                              +{roommate.platforms.length - 3} more
+                              +{roommate.interests.length - 3} more
                             </Badge>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {(roommate.timezone || roommate.region) && (
-                      <div className="flex items-center text-sm text-muted-foreground space-x-2">
-                        {roommate.region && (
-                          <span className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{roommate.region}</span>
-                          </span>
-                        )}
-                        {roommate.timezone && (
-                          <span className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
+                    {roommate.platforms && roommate.platforms.length > 0 && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 mb-1">Platforms:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {roommate.platforms.slice(0, 2).map((platform, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {platform}
+                            </Badge>
+                          ))}
+                          {roommate.platforms.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{roommate.platforms.length - 2} more
+                            </Badge>
+                          )}
                             <span>{roommate.timezone?.replace('America/', '').replace('_', ' ')}</span>
                           </span>
                         )}
