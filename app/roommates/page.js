@@ -10,7 +10,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { ArrowLeft, Search, Users, MapPin, Clock, UserPlus, Filter } from 'lucide-react'
+import { ArrowLeft, Search, Users, MapPin, Clock, UserPlus, Filter, Home } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+// Add cache busting for auth
+export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 
 export default function RoommatesPage() {
   const [user, setUser] = useState(null)
