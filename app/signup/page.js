@@ -113,10 +113,29 @@ export default function SignupPage() {
           title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
-        // Wait briefly for cookie to be set, then force a full page reload to dashboard
-        setTimeout(() => {
-          window.location.replace('/dashboard')
-        }, 500) // Shorter delay, use replace instead of href
+        
+        // Check if user is authenticated before redirecting
+        const checkAuthAndRedirect = async () => {
+          try {
+            const authResponse = await fetch('/api/auth/me')
+            if (authResponse.ok) {
+              router.push('/dashboard')
+            } else {
+              // If auth check fails, wait a bit more and try again
+              setTimeout(() => {
+                window.location.replace('/dashboard')
+              }, 1000)
+            }
+          } catch (error) {
+            // Fallback to window redirect
+            setTimeout(() => {
+              window.location.replace('/dashboard')
+            }, 1000)
+          }
+        }
+        
+        // Wait briefly for cookie to be set, then check auth
+        setTimeout(checkAuthAndRedirect, 500)
       } else {
         toast({
           title: "Error",
