@@ -113,10 +113,10 @@ export default function SignupPage() {
           title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
-        // Token is now set in HttpOnly cookie, redirect to dashboard
+        // Wait briefly for cookie to be set, then force a full page reload to dashboard
         setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 1000) // Give time for toast to show
+          window.location.replace('/dashboard')
+        }, 500) // Shorter delay, use replace instead of href
       } else {
         toast({
           title: "Error",
