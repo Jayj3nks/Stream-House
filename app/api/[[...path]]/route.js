@@ -417,6 +417,17 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(userWithoutPassword))
     }
 
+    // Logout endpoint
+    if (route === '/auth/logout' && method === 'POST') {
+      const response = handleCORS(NextResponse.json({ ok: true }))
+      response.cookies.set("access_token", "", { 
+        httpOnly: true, 
+        path: "/", 
+        maxAge: 0 
+      })
+      return response
+    }
+
     // ======================
     // PROFILE ROUTES (STABLE SCHEMA)
     // ======================
