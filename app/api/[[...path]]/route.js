@@ -337,10 +337,21 @@ async function handleRoute(request, { params }) {
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
 
       const { passwordHash: _, ...userWithoutPassword } = user
-      return handleCORS(NextResponse.json({ 
+      const response = handleCORS(NextResponse.json({ 
         token, 
         user: userWithoutPassword 
       }))
+      
+      // Set HttpOnly cookie for persistent auth
+      response.cookies.set("access_token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      })
+      
+      return response
     }
 
     // Login endpoint
