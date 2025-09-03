@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Streamer House - Complete frontend rebrand and new features implementation including profile pictures, kick votes, message board, roommate finder, and enhanced post management"
+user_problem_statement: "Stream-House - Fix auth/session jank, require profile validation, implement dashboard with message board, enhance Find Roommates, and make deployable on Vercel + Atlas"
 
 backend:
   - task: "New Post System - Create Post with URL Metadata"
