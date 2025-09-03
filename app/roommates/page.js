@@ -30,12 +30,10 @@ export default function RoommatesPage() {
 
   // Simple filters for better UX
   const [filters, setFilters] = useState({
-    niche: '',
-    platforms: '',
-    timezone: '',
-    region: '',
-    experience: '',
-    q: ''
+    location: '',
+    minBudget: '',
+    maxBudget: '',
+    interests: ''
   })
 
   useEffect(() => {
