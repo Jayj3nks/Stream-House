@@ -147,12 +147,10 @@ export default function RoommatesPage() {
 
   const clearFilters = () => {
     setFilters({
-      niche: '',
-      platforms: '',
-      timezone: '',
-      region: '',
-      experience: '',
-      q: ''
+      location: '',
+      minBudget: '',
+      maxBudget: '',
+      interests: ''
     })
   }
 
