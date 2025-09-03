@@ -345,6 +345,57 @@ backend:
           agent: "testing"
           comment: "✅ VERIFIED IMPLEMENTED - /api/media/upload endpoint implemented and working. Returns proper media URL and ID. Profile picture upload system functional with avatar URL generation."
 
+  - task: "Cookie-based Authentication System"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE TESTING COMPLETED - Cookie-based authentication system working perfectly. POST /api/auth/signup sets HttpOnly cookies with complete profile data, POST /api/auth/login sets HttpOnly cookies, GET /api/auth/me works with cookie authentication, POST /api/auth/logout properly clears cookies. All authentication flows tested and working correctly."
+
+  - task: "Profile Update API with Validation"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE TESTING COMPLETED - Profile update API validation working correctly. PUT /api/profile with empty data fails with 'at least one field' error as expected, single field updates succeed, multiple field updates succeed. Proper validation and error handling implemented."
+
+  - task: "Messages API with Authentication"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ FAILED - Messages API returning 500 errors due to repository integration issue. house.members property not available, should use houseRepo.isMember() method instead."
+        - working: true
+          agent: "testing"
+          comment: "✅ FIXED AND VERIFIED - Messages API working correctly after fixing repository integration. GET /api/messages?houseId=test works with authentication and proper house membership validation, POST /api/messages with houseId and text works correctly. Fixed house.members.includes() calls to use houseRepo.isMember() method."
+
+  - task: "Roommates API with Filtering"
+    implemented: true
+    working: true
+    file: "/app/app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE TESTING COMPLETED - Roommates API working correctly. GET /api/roommates requires authentication (returns 401 without auth), GET /api/roommates?location=test&minBudget=500 works with filters and returns paginated results. Proper authentication enforcement and filtering implemented."
+
 frontend:
   - task: "Complete Rebrand: Squad → House terminology"
     implemented: true
