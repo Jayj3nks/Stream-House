@@ -199,105 +199,66 @@ export default function RoommatesPage() {
               Search Filters
             </CardTitle>
             <CardDescription>
-              Find creators who match your interests and preferences
+              Find creators who match your interests and streaming goals
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="search">Search</Label>
+                <Label htmlFor="location">Location</Label>
                 <Input
-                  id="search"
-                  placeholder="Search by username..."
-                  value={filters.q}
-                  onChange={(e) => handleFilterChange('q', e.target.value)}
+                  id="location"
+                  placeholder="City, State"
+                  value={filters.location || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="niche">Niche</Label>
-                <Select value={filters.niche} onValueChange={(value) => handleFilterChange('niche', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any niche" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any niche</SelectItem>
-                    <SelectItem value="gaming">Gaming</SelectItem>
-                    <SelectItem value="fitness">Fitness</SelectItem>
-                    <SelectItem value="beauty">Beauty</SelectItem>
-                    <SelectItem value="cooking">Cooking</SelectItem>
-                    <SelectItem value="music">Music</SelectItem>
-                    <SelectItem value="dance">Dance</SelectItem>
-                    <SelectItem value="comedy">Comedy</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="tech">Tech</SelectItem>
-                    <SelectItem value="lifestyle">Lifestyle</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="minBudget">Min Budget</Label>
+                <Input
+                  id="minBudget"
+                  type="number"
+                  placeholder="$500"
+                  value={filters.minBudget || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, minBudget: e.target.value }))}
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="platforms">Platforms</Label>
-                <Select value={filters.platforms} onValueChange={(value) => handleFilterChange('platforms', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any platform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any platform</SelectItem>
-                    <SelectItem value="tiktok">TikTok</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="twitch">Twitch</SelectItem>
-                    <SelectItem value="twitter">Twitter/X</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="maxBudget">Max Budget</Label>
+                <Input
+                  id="maxBudget"
+                  type="number"
+                  placeholder="$2000"
+                  value={filters.maxBudget || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, maxBudget: e.target.value }))}
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select value={filters.timezone} onValueChange={(value) => handleFilterChange('timezone', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any timezone</SelectItem>
-                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    <SelectItem value="Europe/London">GMT</SelectItem>
-                    <SelectItem value="Europe/Paris">Central European Time</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="interests">Interests</Label>
+                <Input
+                  id="interests"
+                  placeholder="gaming, music, art"
+                  value={filters.interests || ''}
+                  onChange={(e) => setFilters(prev => ({ ...prev, interests: e.target.value }))}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="region">Region</Label>
-                <Select value={filters.region} onValueChange={(value) => handleFilterChange('region', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any region</SelectItem>
-                    <SelectItem value="US-East">US East</SelectItem>
-                    <SelectItem value="US-West">US West</SelectItem>
-                    <SelectItem value="US-Central">US Central</SelectItem>
-                    <SelectItem value="Europe">Europe</SelectItem>
-                    <SelectItem value="Asia">Asia</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="md:col-span-4 flex gap-2">
+                <Button type="submit" disabled={loading}>
+                  <Search className="w-4 h-4 mr-2" />
+                  {loading ? 'Searching...' : 'Search'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => {
+                  setFilters({ location: '', minBudget: '', maxBudget: '', interests: '' })
+                  loadRoommates()
+                }}>
+                  Clear Filters
+                </Button>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="experience">Experience</Label>
-                <Select value={filters.experience} onValueChange={(value) => handleFilterChange('experience', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any experience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Any experience</SelectItem>
-                    <SelectItem value="novice">Novice</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
+            </form>
                     <SelectItem value="pro">Pro</SelectItem>
                   </SelectContent>
                 </Select>
