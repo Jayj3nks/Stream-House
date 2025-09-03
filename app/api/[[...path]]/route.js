@@ -1078,7 +1078,15 @@ async function handleRoute(request, { params }) {
       
       // Check if user is member of the house
       const house = await houseRepo.getById(houseId)
-      if (!house || !house.members.includes(tokenData.userId)) {
+      if (!house) {
+        return handleCORS(NextResponse.json(
+          { error: "House not found" }, 
+          { status: 404 }
+        ))
+      }
+      
+      const isMember = await houseRepo.isMember(houseId, tokenData.userId)
+      if (!isMember) {
         return handleCORS(NextResponse.json(
           { error: "Unauthorized" }, 
           { status: 403 }
@@ -1108,7 +1116,15 @@ async function handleRoute(request, { params }) {
       
       // Check if user is member of the house
       const house = await houseRepo.getById(houseId)
-      if (!house || !house.members.includes(tokenData.userId)) {
+      if (!house) {
+        return handleCORS(NextResponse.json(
+          { error: "House not found" }, 
+          { status: 404 }
+        ))
+      }
+      
+      const isMember = await houseRepo.isMember(houseId, tokenData.userId)
+      if (!isMember) {
         return handleCORS(NextResponse.json(
           { error: "Unauthorized" }, 
           { status: 403 }
