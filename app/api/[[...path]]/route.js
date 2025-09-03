@@ -176,14 +176,29 @@ function handleCORS(response) {
   return response
 }
 
-// JWT token verification
+// JWT token verification - support both Authorization header and cookies
 function verifyToken(request) {
+  let token = null
+  
+  // First try Authorization header (for existing functionality)
   const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  } else {
+    // Try cookie
+    const cookieHeader = request.headers.get('cookie')
+    if (cookieHeader) {
+      const cookies = Object.fromEntries(
+        cookieHeader.split('; ').map(c => c.split('='))
+      )
+      token = cookies.access_token
+    }
+  }
+  
+  if (!token) {
     throw new Error('No token provided')
   }
   
-  const token = authHeader.substring(7)
   try {
     return jwt.verify(token, JWT_SECRET)
   } catch (error) {
