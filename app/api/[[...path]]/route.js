@@ -1060,6 +1060,77 @@ async function handleRoute(request, { params }) {
     }
 
     // ======================
+    // MESSAGES ROUTES
+    // ======================
+    
+    // Get messages for a house
+    if (route === '/messages' && method === 'GET') {
+      const tokenData = verifyToken(request)
+      const url = new URL(request.url)
+      const houseId = url.searchParams.get('houseId')
+      
+      if (!houseId) {
+        return handleCORS(NextResponse.json(
+          { error: "House ID required" }, 
+          { status: 400 }
+        ))
+      }
+      
+      // Check if user is member of the house
+      const house = await houseRepo.getById(houseId)
+      if (!house || !house.members.includes(tokenData.userId)) {
+        return handleCORS(NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 403 }
+        ))
+      }
+      
+      // Get messages (implement in repository)
+      const messages = []
+      
+      return handleCORS(NextResponse.json({ 
+        ok: true, 
+        messages 
+      }))
+    }
+    
+    // Post message to a house
+    if (route === '/messages' && method === 'POST') {
+      const tokenData = verifyToken(request)
+      const { houseId, text } = await request.json()
+      
+      if (!houseId || !text?.trim()) {
+        return handleCORS(NextResponse.json(
+          { error: "House ID and message text required" }, 
+          { status: 400 }
+        ))
+      }
+      
+      // Check if user is member of the house
+      const house = await houseRepo.getById(houseId)
+      if (!house || !house.members.includes(tokenData.userId)) {
+        return handleCORS(NextResponse.json(
+          { error: "Unauthorized" }, 
+          { status: 403 }
+        ))
+      }
+      
+      // Create message (implement in repository)
+      const message = {
+        id: Date.now().toString(),
+        houseId,
+        userId: tokenData.userId,
+        text: text.trim(),
+        createdAt: new Date()
+      }
+      
+      return handleCORS(NextResponse.json({ 
+        ok: true, 
+        message 
+      }))
+    }
+
+    // ======================
     // ERROR HANDLING
     // ======================
     
