@@ -127,12 +127,15 @@ export default function RoommatesPage() {
   const inviteToHouse = async (roommateId) => {
     try {
       toast({
-        title: "Error",
+        title: "Feature Coming Soon",
+        description: "House invitations will be available in a future update."
+      })
+    } catch (error) {
+      toast({
+        title: "Error", 
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
-    } finally {
-      setInviteLoading(prev => ({ ...prev, [roommateId]: false }))
     }
   }
 
