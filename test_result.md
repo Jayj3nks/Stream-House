@@ -665,6 +665,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ SIGNUP REDIRECT ISSUE CONFIRMED: After clicking 'Create Account', user is redirected to '/?next=%2Fdashboard' instead of '/dashboard'. Root cause: Middleware intercepts redirect suggesting authentication cookie not set properly or middleware not recognizing authenticated state immediately after signup. The setTimeout + window.location.href approach in signup page is not working with cookie-based auth system."
+        - working: false
+          agent: "testing"
+          comment: "❌ ISSUE CONFIRMED WITH COMPREHENSIVE TESTING: Completed full 4-step signup process with test data (testuser1756943562@example.com, Test User, testpassword123, TikTok platform, Gaming niche, Los Angeles location). Signup API returns 200 status and authentication works (multiple successful /api/auth/me calls with 200 status), but user is redirected to '/?next=%2Fdashboard' instead of '/dashboard'. Even manual navigation to /dashboard gets intercepted by middleware. The checkAuthAndRedirect function in signup page is not working properly with cookie-based authentication - middleware doesn't recognize authenticated state immediately after signup despite cookies being set correctly."
 
   - task: "Dashboard Experience with Message Board"
     implemented: true
