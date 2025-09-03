@@ -97,37 +97,35 @@ export default function RoommatesPage() {
     }
   }
 
-  const inviteToHouse = async (roommateId) => {
-    setInviteLoading(prev => ({ ...prev, [roommateId]: true }))
-    
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/invites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          inviteeUserId: roommateId,
-          type: 'internal'
-        })
-      })
+  const handleFilterSubmit = (e) => {
+    e.preventDefault()
+    if (user) {
+      loadRoommates()
+    }
+  }
 
-      if (response.ok) {
-        toast({
-          title: "Invite sent!",
-          description: "Your house invitation has been sent."
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: error.error || "Failed to send invite.",
-          variant: "destructive"
-        })
-      }
-    } catch (error) {
+  const handleMessage = (roommate) => {
+    toast({
+      title: "Feature Coming Soon",
+      description: "Direct messaging will be available in a future update."
+    })
+  }
+
+  if (loadingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null // Will redirect to login
+  }
+
+  // Placeholder invite function
+  const inviteToHouse = async (roommateId) => {
+    try {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
