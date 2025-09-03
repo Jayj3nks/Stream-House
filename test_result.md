@@ -751,6 +751,8 @@ test_plan:
     - "Authentication Persistence System"
   test_all: false
   test_priority: "high_first"
+  signup_redirect_issue_confirmed: true
+  root_cause_identified: "Cookie authentication not working with setTimeout redirect approach"
 
 agent_communication:
     - agent: "testing"
