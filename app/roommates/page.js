@@ -82,6 +82,7 @@ export default function RoommatesPage() {
       if (response.ok) {
         const data = await response.json()
         setRoommates(data.items || [])
+        setPagination(prev => ({ ...prev, total: data.total || 0 }))
       } else {
         toast({
           title: "Error",
