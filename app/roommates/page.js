@@ -383,28 +383,7 @@ export default function RoommatesPage() {
             </div>
           )}
 
-          {/* Pagination */}
-          {!loading && roommates.length > 0 && Math.ceil(pagination.total / pagination.pageSize) > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-8">
-              <Button
-                variant="outline"
-                disabled={pagination.page === 1}
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {pagination.page} of {Math.ceil(pagination.total / pagination.pageSize)}
-              </span>
-              <Button
-                variant="outline"
-                disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+
         </div>
       </div>
       <Toaster />
