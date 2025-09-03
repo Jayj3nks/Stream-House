@@ -110,6 +110,7 @@ export default function RoommatesPage() {
   }
 
   const handleMessage = (roommate) => {
+    // roommate will be used when messaging feature is implemented
     toast({
       title: "Feature Coming Soon",
       description: "Direct messaging will be available in a future update."
