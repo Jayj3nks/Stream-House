@@ -23,6 +23,8 @@ export default function RoommatesPage() {
   const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingAuth, setLoadingAuth] = useState(true)
+  const [inviteLoading, setInviteLoading] = useState({})
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 12, total: 0 })
   const { toast } = useToast()
   const router = useRouter()
 
