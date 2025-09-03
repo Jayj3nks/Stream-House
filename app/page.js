@@ -50,12 +50,25 @@ export default function App() {
   const [kickTarget, setKickTarget] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      loadUserData(token)
-    }
+    checkAuthStatus()
   }, [])
 
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        // User is authenticated, redirect to dashboard
+        window.location.href = '/dashboard'
+      } else {
+        setShowAuth(true)
+      }
+    } catch (error) {
+      console.error('Error checking auth status:', error)
+      setShowAuth(true)
+    }
+  }
+
+  // Keep the old function for backward compatibility but it won't be used
   const loadUserData = async (token) => {
     try {
       const response = await fetch('/api/auth/me', {
