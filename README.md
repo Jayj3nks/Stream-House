@@ -1,33 +1,23 @@
-# CreatorSquad - Creator Support & Collab Platform
+# Stream-House 🏠 - Creator Collaboration Platform
 
-A comprehensive platform helping creators organize into squads, boost each other's posts, maintain accountability, and find collaboration opportunities.
+A modern Next.js platform helping streamers and content creators organize into houses, collaborate on content, and find roommates for shared streaming spaces.
 
 ## 🚀 Features
 
-### Core Features Implemented (MVP)
-- **Authentication System** - Simple email/password signup and login
-- **Squad Management** - Create and join creator squads
-- **Post Sharing** - Share content URLs with automatic metadata fetching
-- **Engagement Tracking** - Like, comment, and share tracking with credit rewards
-- **Credits System** - Earn credits for supporting squad members
-- **Real-time Updates** - Live engagement tracking and notifications
-- **Accountability Dashboard** - Track daily goals and engagement progress
+### Core Features
+- **Dashboard-First Experience** - Post-login landing with house management
+- **Message Board** - Real-time communication within houses
+- **Profile Management** - Comprehensive creator profiles with validation
+- **Find Roommates** - Advanced filtering system for finding collaborators
+- **Authentication** - Persistent session management with HttpOnly cookies
+- **House Management** - Create and manage streaming houses
 
-### Platform Support
-- **TikTok** - Automatic platform detection and metadata extraction
-- **YouTube** - Video metadata and thumbnail fetching
-- **Instagram** - Post recognition and metadata
-- **Twitch** - Stream and clip support
-- **Twitter/X** - Tweet metadata extraction
-- **Generic URLs** - Fallback for other platforms
-
-## 🎯 The "Aha Moment"
-
-CreatorSquad solves the core problem of **creator isolation** by providing:
-1. **Mutual Support System** - Squad members boost each other's content
-2. **Accountability Tracking** - Never miss supporting your teammates
-3. **Credit Rewards** - Gamified engagement system (👍=1, 💬=2, 🔄=3 credits)
-4. **Progress Visualization** - See team engagement progress in real-time
+### Latest Updates (v2.0)
+- ✅ **Persistent Authentication** - No more logout on browser back/refresh
+- ✅ **Profile Validation** - Requires at least one field before completion
+- ✅ **Dashboard Landing** - Clean post-login experience with message board
+- ✅ **Enhanced Find Roommates** - Location, budget, and interests filtering
+- ✅ **Mobile Responsive** - Works perfectly on all devices
 
 ## 🛠 Tech Stack
 
