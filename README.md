@@ -93,25 +93,30 @@ yarn dev
 
 ## 🎮 How to Use
 
-### 1. Sign Up & Create Squad
-- Create account with email/password
-- Set display name for your creator profile
-- Create your first squad (e.g., "Fitness Creators", "Gaming Squad")
+### 1. Sign Up & Complete Profile
+- Create account with email/password and enhanced profile fields
+- Add platforms, niches, games, location, and streaming schedule
+- **Must fill at least one profile field** to complete setup
 
-### 2. Share Your Content
-- Click "Share Your Content" button
-- Paste URL from TikTok, YouTube, Instagram, etc.
-- App automatically fetches title, thumbnail, and detects platform
+### 2. Dashboard Experience
+- After login, land directly on your **Dashboard**
+- View your houses in the sidebar
+- Access the **Message Board** for active house communication
 
-### 3. Support Squad Members
-- View posts from squad members in the main feed
-- Click 👍 (1 credit), 💬 (2 credits), or 🔄 (3 credits) to engage
-- Watch progress bars fill as team supports each post
+### 3. House Management
+- Create your first house (streaming/content house)
+- Invite other creators to join
+- Use the message board to coordinate and communicate
 
-### 4. Track Progress
-- Monitor your credit balance in the sidebar
-- Check daily engagement goals (5 engagements/day)
-- View squad statistics and team performance
+### 4. Find Roommates
+- Navigate to "Find Roommates" from dashboard
+- Filter by **location**, **budget range**, and **interests**
+- Message potential roommates or send house invitations
+
+### 5. Profile & Settings
+- Update your profile information anytime
+- Toggle roommate search visibility
+- Manage account settings and preferences
 
 ## 🏗 Architecture
 
