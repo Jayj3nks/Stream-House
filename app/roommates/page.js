@@ -255,64 +255,57 @@ export default function RoommatesPage() {
                 </Button>
               </div>
             </form>
-                    <SelectItem value="pro">Pro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <Button variant="outline" onClick={clearFilters}>
-                Clear All Filters
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
         {/* Results */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-xl font-semibold">
               Available Roommates
             </h2>
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <Search className="h-3 w-3" />
-              <span>{pagination.total} found</span>
-            </Badge>
+            {!loading && (
+              <Badge variant="secondary">
+                {roommates.length} found
+              </Badge>
+            )}
           </div>
 
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p>Loading roommates...</p>
+              <p>Searching for roommates...</p>
             </div>
           ) : roommates.length === 0 ? (
             <Card>
               <CardContent className="text-center py-12">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No roommates found</h3>
-                <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or check back later for new creators.
+                <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No roommates found</h3>
+                <p className="text-gray-500 mb-6">
+                  Try adjusting your search criteria or check back later for new creators.
                 </p>
-                <Button onClick={clearFilters}>
-                  Clear Filters
+                <Button onClick={() => {
+                  clearFilters()
+                  loadRoommates()
+                }}>
+                  Clear Filters & Search Again
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {roommates.map((roommate) => (
-                <Card key={roommate.userId} className="hover:shadow-lg transition-shadow">
+                <Card key={roommate.userId || roommate.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-center space-x-3">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={roommate.avatarUrl} />
                         <AvatarFallback>
-                          {roommate.username?.[0]?.toUpperCase()}
+                          {(roommate.displayName || roommate.username || 'U')[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <h3 className="font-semibold">{roommate.username}</h3>
+                        <h3 className="font-semibold">{roommate.displayName || roommate.username || 'Anonymous'}</h3>
                         {roommate.experience && (
                           <Badge variant="outline" className="text-xs">
                             {roommate.experience}
