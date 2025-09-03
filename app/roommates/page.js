@@ -175,27 +175,28 @@ export default function RoommatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/'}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to House
-            </Button>
-            <h1 className="text-2xl font-bold text-purple-600">Find Roommates</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+      <div className="container mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-purple-600">Find Roommates</h1>
+            <p className="text-gray-600">Discover potential streaming collaborators</p>
           </div>
+          <Button variant="outline" asChild>
+            <Link href="/dashboard">
+              <Home className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Filters */}
-        <Card className="mb-8">
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Filter className="h-5 w-5" />
-              <span>Filter Roommates</span>
+            <CardTitle className="flex items-center">
+              <Filter className="w-5 h-5 mr-2" />
+              Search Filters
             </CardTitle>
             <CardDescription>
               Find creators who match your interests and preferences
