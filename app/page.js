@@ -208,16 +208,8 @@ export default function App() {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('token', data.token)
-        setUser(data.user)
-        setShowAuth(false)
-        toast({
-          title: "Welcome back!",
-          description: `You now have ${data.user.totalPoints || 0} points.`
-        })
-        await loadMyHouses(data.token)
-        await loadHouseSummary(data.token)
-        await loadActiveHouse(data.token)
+        // Token is now set in HttpOnly cookie, redirect to dashboard
+        window.location.href = '/dashboard'
       } else {
         toast({
           title: "Error",
