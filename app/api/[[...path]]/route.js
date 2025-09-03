@@ -563,6 +563,52 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(clipsResult))
     }
 
+    // Update profile (requires at least one field)
+    if (route === '/profile' && method === 'PUT') {
+      const tokenData = verifyToken(request)
+      const body = await request.json()
+      
+      // Check if at least one field is provided and not empty
+      const hasValidField = Object.values(body).some((x) => {
+        if (x === undefined || x === null) return false;
+        if (Array.isArray(x)) return x.length > 0;
+        return String(x).trim() !== "";
+      });
+      
+      if (!hasValidField) {
+        return handleCORS(NextResponse.json({ 
+          error: "Please fill at least one field." 
+        }, { status: 400 }))
+      }
+      
+      // Update user profile with provided fields
+      const updateData = {}
+      if (body.bio !== undefined) updateData.bio = body.bio
+      if (body.interests !== undefined) updateData.interests = body.interests
+      if (body.location !== undefined) updateData.location = body.location
+      if (body.budget !== undefined) updateData.budget = body.budget
+      if (body.platforms !== undefined) updateData.platforms = body.platforms
+      if (body.niches !== undefined) updateData.niches = body.niches
+      if (body.games !== undefined) updateData.games = body.games
+      if (body.city !== undefined) updateData.city = body.city
+      if (body.timeZone !== undefined) updateData.timeZone = body.timeZone
+      
+      const user = await userRepo.updateProfile(tokenData.userId, updateData)
+      
+      if (!user) {
+        return handleCORS(NextResponse.json(
+          { error: "User not found" }, 
+          { status: 404 }
+        ))
+      }
+      
+      const { passwordHash: _, ...userWithoutPassword } = user
+      return handleCORS(NextResponse.json({ 
+        ok: true, 
+        user: userWithoutPassword 
+      }))
+    }
+
     // ======================
     // ROOMMATES ROUTES (AUTH REQUIRED, NO LOGOUT ON 401)
     // ======================
