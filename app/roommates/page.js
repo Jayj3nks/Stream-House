@@ -131,11 +131,13 @@ export default function RoommatesPage() {
   // Placeholder invite function
   const inviteToHouse = async (roommateId) => {
     try {
+      // roommateId will be used when feature is implemented
       toast({
         title: "Feature Coming Soon",
         description: "House invitations will be available in a future update."
       })
     } catch (error) {
+      console.error('Invite error:', error)
       toast({
         title: "Error", 
         description: "Something went wrong. Please try again.",
