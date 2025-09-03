@@ -655,13 +655,16 @@ frontend:
     implemented: true
     working: false
     file: "/app/app/page.js, /app/app/signup/page.js, /app/middleware.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL ISSUE: Signup flow not redirecting to dashboard after account creation. User stays on signup page after completing 4-step process. Authentication persistence cannot be tested due to signup failure."
+        - working: false
+          agent: "testing"
+          comment: "❌ SIGNUP REDIRECT ISSUE CONFIRMED: After clicking 'Create Account', user is redirected to '/?next=%2Fdashboard' instead of '/dashboard'. Root cause: Middleware intercepts redirect suggesting authentication cookie not set properly or middleware not recognizing authenticated state immediately after signup. The setTimeout + window.location.href approach in signup page is not working with cookie-based auth system."
 
   - task: "Dashboard Experience with Message Board"
     implemented: true
