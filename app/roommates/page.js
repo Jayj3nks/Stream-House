@@ -355,29 +355,26 @@ export default function RoommatesPage() {
                               +{roommate.platforms.length - 2} more
                             </Badge>
                           )}
-                            <span>{roommate.timezone?.replace('America/', '').replace('_', ' ')}</span>
-                          </span>
-                        )}
+                        </div>
                       </div>
                     )}
 
-                    <div className="flex space-x-2 pt-2">
+                    <div className="flex space-x-2 pt-4">
                       <Button
-                        onClick={() => window.location.href = `/profile/${roommate.username}`}
+                        onClick={() => handleMessage(roommate)}
                         variant="outline"
                         size="sm"
                         className="flex-1"
                       >
-                        View Profile
+                        Message
                       </Button>
                       <Button
-                        onClick={() => inviteToHouse(roommate.userId)}
-                        disabled={inviteLoading[roommate.userId]}
+                        onClick={() => inviteToHouse(roommate.userId || roommate.id)}
                         size="sm"
                         className="flex-1"
                       >
-                        <UserPlus className="h-4 w-4 mr-1" />
-                        {inviteLoading[roommate.userId] ? "Inviting..." : "Invite"}
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Invite
                       </Button>
                     </div>
                   </CardContent>
