@@ -61,62 +61,23 @@ export default function RoommatesPage() {
     }
   }
 
-      const response = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-      } else if (response.status === 401) {
-        // Redirect to login with next parameter - NO SESSION CLEARING
-        window.location.href = '/login?next=/roommates'
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load user data.",
-          variant: "destructive"
-        })
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error)
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
-    }
-  }
-
   const loadRoommates = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
       const searchParams = new URLSearchParams()
       
-      // Add filters to search params
+      // Add filters to search params  
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          searchParams.append(key, value)
+        if (value && value.trim()) {
+          searchParams.append(key, value.trim())
         }
       })
       
-      searchParams.append('page', pagination.page.toString())
-      searchParams.append('pageSize', pagination.pageSize.toString())
-      
-      const response = await fetch(`/api/roommates?${searchParams}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const response = await fetch(`/api/roommates?${searchParams}`)
       
       if (response.ok) {
         const data = await response.json()
-        setRoommates(data.items)
-        setPagination(prev => ({
-          ...prev,
-          total: data.total
-        }))
-      } else if (response.status === 401) {
-        // Redirect to login - NO LOGOUT
-        window.location.href = '/login?next=/roommates'
+        setRoommates(data.items || [])
       } else {
         toast({
           title: "Error",
