@@ -22,18 +22,16 @@ export default function RoommatesPage() {
   const [user, setUser] = useState(null)
   const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(false)
-  const [inviteLoading, setInviteLoading] = useState({})
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 })
+  const [loadingAuth, setLoadingAuth] = useState(true)
   const { toast } = useToast()
+  const router = useRouter()
 
-  // Filters
+  // Simple filters for better UX
   const [filters, setFilters] = useState({
-    niche: '',
-    platforms: '',
-    timezone: '',
-    region: '',
-    experience: '',
-    q: ''
+    location: '',
+    minBudget: '',
+    maxBudget: '',  
+    interests: ''
   })
 
   useEffect(() => {
@@ -44,16 +42,24 @@ export default function RoommatesPage() {
     if (user) {
       loadRoommates()
     }
-  }, [user, filters, pagination.page])
+  }, [user])
 
   const loadUserData = async () => {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        // Redirect to login with next parameter - NO LOGOUT
-        window.location.href = '/login?next=/roommates'
-        return
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+      } else {
+        router.push('/')
       }
+    } catch (error) {
+      console.error('Error loading user data:', error)
+      router.push('/')
+    } finally {
+      setLoadingAuth(false)
+    }
+  }
 
       const response = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
