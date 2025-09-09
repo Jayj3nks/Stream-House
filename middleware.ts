@@ -1,22 +1,25 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyAccessToken } from "@/lib/auth";
+
+const COOKIE_NAME = "access_token";
+const PROTECTED_PREFIXES = ["/dashboard", "/house", "/roommates", "/profile", "/settings"];
 
 export function middleware(req: NextRequest) {
-  const protectedPaths = ["/dashboard", "/house", "/roommates", "/profile", "/settings"];
-  const isProtected = protectedPaths.some((p) => req.nextUrl.pathname.startsWith(p));
-  
+  const { pathname } = req.nextUrl;
+
+  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 
-  const token = req.cookies.get("access_token")?.value;
-  if (!token || !verifyAccessToken(token)) {
+  const token = req.cookies.get(COOKIE_NAME)?.value;
+
+  if (!token) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
-    url.searchParams.set("next", req.nextUrl.pathname);
+    url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
-  
+
   return NextResponse.next();
 }
 
