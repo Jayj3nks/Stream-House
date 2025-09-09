@@ -1,11 +1,12 @@
-// app/api/test-db/route.ts
 import { NextResponse } from "next/server";
-import clientPromise from "../../../lib/mongo"; // relative path to lib/mongo.ts
+import { getDb } from "@/lib/mongo";
+
+// (optional) Ensure Node runtime for Mongo/JWT libs
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db(process.env.DB_NAME!);
+    const db = await getDb();
     const count = await db.collection("users").countDocuments();
     return NextResponse.json({ ok: true, userCount: count });
   } catch (e: any) {
