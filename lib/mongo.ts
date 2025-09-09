@@ -1,16 +1,33 @@
-import { MongoClient } from "mongodb";
+// lib/mongo.ts
+import { MongoClient, Db } from "mongodb";
 
-declare global { var _mongoClientPromise: Promise<MongoClient> | undefined; }
+const uri = process.env.MONGO_URL;
+const dbName = process.env.DB_NAME;
 
-const uri = process.env.MONGO_URL!;
-if (!uri) throw new Error("Missing MONGO_URL");
+if (!uri) throw new Error("MONGO_URL is not set");
+if (!dbName) throw new Error("DB_NAME is not set");
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+// Cache across hot reloads (dev) and serverless invocations (Vercel)
+let cachedClient: MongoClient | null = null;
+let cachedDb: Db | null = null;
 
-if (!global._mongoClientPromise) {
-  client = new MongoClient(uri);
-  global._mongoClientPromise = client.connect();
+export async function getClient(): Promise<MongoClient> {
+  if (cachedClient) return cachedClient;
+  const client = new MongoClient(uri, {
+    maxPoolSize: 10,
+    retryWrites: true,
+  });
+  await client.connect();
+  cachedClient = client;
+  return client;
 }
-clientPromise = global._mongoClientPromise;
-export default clientPromise;
+
+export async function getDb(): Promise<Db> {
+  if (cachedDb) return cachedDb;
+  const client = await getClient();
+  cachedDb = client.db(dbName);
+  return cachedDb;
+}
+
+// (Optional) default export for backwards-compatibility
+export default getDb;
