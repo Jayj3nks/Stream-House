@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 import { MessageSquare, Home, Users, Plus, Settings, LogOut } from 'lucide-react'
@@ -36,8 +35,9 @@ export default function Dashboard() {
     try {
       const response = await fetch('/api/auth/me')
       if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
+        const data = await response.json()
+        // handle either { user } or raw user
+        setUser(data?.user ?? data)
         await loadMyHouses()
       } else {
         router.push('/')
@@ -54,9 +54,10 @@ export default function Dashboard() {
     try {
       const response = await fetch('/api/users/me/houses')
       if (response.ok) {
-        const houses = await response.json()
+        const data = await response.json()
+        const houses = Array.isArray(data) ? data : (data?.houses ?? [])
         setMyHouses(houses)
-        
+
         // Set first house as active if available
         if (houses.length > 0) {
           setActiveHouse(houses[0])
@@ -166,17 +167,19 @@ export default function Dashboard() {
             <Home className="w-4 h-4 mr-2" />
             Dashboard
           </Button>
+
           <Button variant="outline" asChild>
             <Link href="/roommates">
               <Users className="w-4 h-4 mr-2" />
               Find Roommates
             </Link>
           </Button>
+
           <Button variant="outline" asChild>
             <Link href="/settings">
               <Settings className="w-4 h-4 mr-2" />
               Settings
-            </Button>
+            </Link>
           </Button>
         </div>
 
