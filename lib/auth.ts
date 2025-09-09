@@ -1,19 +1,25 @@
 // lib/auth.ts
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error("JWT_SECRET is not set in environment variables");
+}
 
-export type JWTPayload = { userId: string; email?: string };
+export interface JWTPayload extends JwtPayload {
+  userId: string;
+  email?: string;
+}
 
-export function signAccessToken(payload: JWTPayload, maxAge = "7d") {
+export function signAccessToken(payload: JWTPayload, maxAge: string | number = "7d") {
   return jwt.sign(payload, SECRET, { expiresIn: maxAge });
 }
 
-export function verifyAccessToken(token: string) {
-  try { 
-    return jwt.verify(token, SECRET) as JWTPayload; 
-  }
-  catch { 
-    return null; 
+export function verifyAccessToken(token: string): JWTPayload | null {
+  try {
+    return jwt.verify(token, SECRET) as JWTPayload;
+  } catch (err) {
+    console.error("JWT verification failed:", err);
+    return null;
   }
 }
