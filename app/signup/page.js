@@ -108,10 +108,10 @@ export default function SignupPage() {
       return false
     }
 
-    if (formData.password.length < 6) {
+    if (formData.password.length < 8) {
       toast({
         title: "Validation Error", 
-        description: "Password must be at least 6 characters long.",
+        description: "Password must be at least 8 characters long.",
         variant: "destructive"
       })
       return false
