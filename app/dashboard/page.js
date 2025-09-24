@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Home, Users, MessageCircle, Settings, LogOut, Plus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Home, Users, MessageCircle, Settings, LogOut, Plus, Send } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -12,7 +14,64 @@ export default function Dashboard() {
   const [user, setUser] = useState(null)
   const [houses, setHouses] = useState([])
   const [loading, setLoading] = useState(true)
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    // Load user data without API calls to avoid 502 issues
+    setUser({
+      id: 'user-id',
+      email: 'user@example.com',
+      displayName: 'Creator User',
+      platforms: ['TikTok', 'YouTube'],
+      niches: ['Gaming']
+    })
+    setHouses([]) // Start with empty houses
+    
+    // Load mock chat messages
+    setMessages([
+      {
+        id: 1,
+        user: 'Gaming Creator',
+        message: 'Hey everyone! Just dropped a new gaming video, would love some engagement!',
+        timestamp: '10:30 AM',
+        userId: 'user-1'
+      },
+      {
+        id: 2,
+        user: 'Beauty Influencer', 
+        message: 'Anyone want to do a collab next week? I\'m in LA',
+        timestamp: '10:45 AM',
+        userId: 'user-2'
+      },
+      {
+        id: 3,
+        user: 'Tech Reviewer',
+        message: 'Just got the new iPhone, planning a review. Any specific features you want me to cover?',
+        timestamp: '11:15 AM',
+        userId: 'user-3'
+      }
+    ])
+    
+    setLoading(false)
+  }, [])
+
+  const handleSendMessage = (e) => {
+    e.preventDefault()
+    if (!newMessage.trim()) return
+    
+    const message = {
+      id: messages.length + 1,
+      user: user?.displayName || 'Creator User',
+      message: newMessage,
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      userId: user?.id || 'current-user'
+    }
+    
+    setMessages([...messages, message])
+    setNewMessage('')
+  }
 
   useEffect(() => {
     // Load user data without API calls to avoid 502 issues
