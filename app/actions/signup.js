@@ -85,9 +85,10 @@ export async function createAccount(formData) {
     cookies().set("access_token", token, {
       httpOnly: true,
       sameSite: "lax", 
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to false for development/testing
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
+      domain: undefined // Let browser set appropriate domain
     })
     
     console.log('Server action: Cookie set, returning success')
