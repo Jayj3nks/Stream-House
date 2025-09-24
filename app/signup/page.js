@@ -120,13 +120,24 @@ export default function SignupPage() {
           description: "Your account has been created successfully."
         })
         
-        console.log('Account created successfully, redirecting...')
-        // Use window.location for redirect
+        console.log('Account created successfully:', result.user)
+        
+        // Wait a moment for cookie to be set, then redirect
         setTimeout(() => {
+          console.log('Redirecting to dashboard...')
           window.location.href = '/dashboard'
-        }, 1000)
+        }, 1500)
       } else {
-        console.log('Server action completed')
+        console.log('Unexpected result:', result)
+        toast({
+          title: "Account Created", 
+          description: "Please sign in with your new account.",
+          variant: "default"
+        })
+        
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 2000)
       }
       
     } catch (error) {
