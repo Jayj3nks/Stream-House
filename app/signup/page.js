@@ -122,11 +122,46 @@ export default function SignupPage() {
         
         console.log('Account created successfully:', result.user)
         
-        // Force redirect using window.location.replace instead of href
-        console.log('Redirecting to dashboard...')
-        setTimeout(() => {
-          window.location.replace('/dashboard')
-        }, 1000)
+        // Now login to set the cookie properly via API
+        console.log('Logging in to set authentication cookie...')
+        try {
+          const loginResponse = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password
+            })
+          })
+          
+          if (loginResponse.ok) {
+            console.log('Login successful, redirecting to dashboard...')
+            setTimeout(() => {
+              window.location.replace('/dashboard')
+            }, 1000)
+          } else {
+            console.error('Login after signup failed')
+            toast({
+              title: "Account Created",
+              description: "Please sign in with your new account.",
+              variant: "default"
+            })
+            setTimeout(() => {
+              window.location.replace('/')
+            }, 2000)
+          }
+        } catch (loginError) {
+          console.error('Login error:', loginError)
+          toast({
+            title: "Account Created",
+            description: "Please sign in with your new account.",
+            variant: "default"
+          })
+          setTimeout(() => {
+            window.location.replace('/')
+          }, 2000)
+        }
       } else {
         console.log('Unexpected result:', result)
         toast({
