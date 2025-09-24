@@ -33,17 +33,22 @@ export default function Dashboard() {
 
   const loadUserData = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      // Use working endpoint instead of /api/auth/me
+      const response = await fetch('/api/auth-check')
       if (response.ok) {
         const data = await response.json()
-        // handle either { user } or raw user
-        setUser(data?.user ?? data)
-        await loadMyHouses()
-      } else {
-        router.push('/')
+        if (data.authenticated) {
+          setUser(data.user)
+          await loadMyHouses()
+          setLoading(false)
+          return
+        }
       }
+      
+      // If not authenticated, redirect to home
+      router.push('/')
     } catch (error) {
-      console.error('Error loading user data:', error)
+      console.error('Auth check error:', error)
       router.push('/')
     } finally {
       setLoading(false)
