@@ -381,22 +381,19 @@ export default function RoommatesPage() {
                     )}
 
                     <div className="flex space-x-2 pt-4">
-                      <Button
-                        onClick={() => handleMessage(roommate)}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      >
-                        Message
-                      </Button>
-                      <Button
-                        onClick={() => inviteToHouse(roommate.userId || roommate.id)}
-                        size="sm"
-                        className="flex-1"
-                      >
-                        <UserPlus className="w-4 h-4 mr-1" />
-                        Invite
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button asChild size="sm" variant="outline" className="flex-1">
+                          <Link href={`/profile/${roommate.username}`}>
+                            View Profile
+                          </Link>
+                        </Button>
+                        <Button asChild size="sm" className="flex-1">
+                          <Link href="/messages">
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Message
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
