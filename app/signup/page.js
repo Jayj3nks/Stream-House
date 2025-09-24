@@ -150,8 +150,20 @@ export default function SignupPage() {
       })
 
       console.log('Response status:', response.status)
-      const data = await response.json()
-      console.log('Response data:', data)
+      let data
+      try {
+        data = await response.json()
+        console.log('Response data:', data)
+      } catch (jsonError) {
+        console.error('Failed to parse JSON response:', jsonError)
+        console.log('Response text:', await response.text())
+        toast({
+          title: "Error",
+          description: "Invalid response from server",
+          variant: "destructive"
+        })
+        return
+      }
 
       if (response.ok) {
         toast({
@@ -159,14 +171,15 @@ export default function SignupPage() {
           description: "Your account has been created successfully."
         })
         
-        // Small delay to ensure cookie is set, then redirect
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 500)
+        console.log('Account created successfully, redirecting to dashboard...')
+        
+        // Redirect immediately
+        router.push('/dashboard')
       } else {
+        console.error('Signup failed with response:', response.status, data)
         toast({
           title: "Error",
-          description: data.error || "Failed to create account",
+          description: data.error || `Failed to create account (${response.status})`,
           variant: "destructive"
         })
       }
