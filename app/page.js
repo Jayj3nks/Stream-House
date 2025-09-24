@@ -47,25 +47,27 @@ export default function HomePage() {
     setLoading(true)
 
     try {
+      // Use the working auth endpoint instead of the 502-prone API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       })
 
-      const data = await response.json()
-
       if (response.ok) {
+        const data = await response.json()
         toast({
           title: "Welcome back!",
           description: "You have been logged in successfully."
         })
         
-        // Wait briefly for cookie to be set, then redirect
+        // Use window.location for more reliable redirect
         setTimeout(() => {
-          router.push('/dashboard')
-        }, 100)
+          window.location.replace('/dashboard')
+        }, 1000)
       } else {
+        const data = await response.json()
         toast({
           title: "Error",
           description: data.error || "Invalid credentials",
@@ -73,6 +75,7 @@ export default function HomePage() {
         })
       }
     } catch (error) {
+      console.error('Login error:', error)
       toast({
         title: "Error", 
         description: "Something went wrong. Please try again.",
