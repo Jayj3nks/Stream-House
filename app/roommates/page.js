@@ -50,8 +50,12 @@ export default function RoommatesPage() {
     try {
       const response = await fetch('/api/auth-check')
       if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
+        const data = await response.json()
+        if (data.authenticated && data.user) {
+          setUser(data.user)
+        } else {
+          router.push('/')
+        }
       } else {
         router.push('/')
       }
