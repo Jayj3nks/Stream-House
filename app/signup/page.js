@@ -105,31 +105,40 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Create form data for direct submission
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = '/api/signup-form'
-      form.style.display = 'none'
-      
-      // Add all form fields
-      Object.entries(formData).forEach(([key, value]) => {
-        const input = document.createElement('input')
-        input.type = 'hidden'
-        input.name = key
-        input.value = Array.isArray(value) ? JSON.stringify(value) : value
-        form.appendChild(input)
-      })
-      
-      document.body.appendChild(form)
-      form.submit()
+      // Call server action directly - this bypasses the 502 proxy issue
+      try {
+        await createAccount(formData)
+        // If we reach here without error, redirect was successful
+        console.log('Account created successfully')
+      } catch (error) {
+        // Check if this is actually a successful redirect
+        if (error && (error.message?.includes('NEXT_REDIRECT') || error.digest?.includes('NEXT_REDIRECT'))) {
+          console.log('Successful redirect detected via server action')
+          toast({
+            title: "Welcome to Streamer House!",
+            description: "Your account has been created successfully."
+          })
+          // The server action will handle the redirect
+          return
+        }
+        
+        // If it's a real error, show it
+        const errorMessage = error.message || 'Something went wrong'
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        })
+      }
       
     } catch (error) {
-      console.error('Submission error:', error)
+      console.error('Outer error:', error)
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
+    } finally {
       setLoading(false)
     }
   }
