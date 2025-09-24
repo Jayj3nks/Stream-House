@@ -83,8 +83,8 @@ export async function createAccount(formData) {
       maxAge: 60 * 60 * 24 * 7,
     })
     
-    // Redirect to dashboard
-    redirect('/dashboard')
+    // Return success instead of redirecting
+    return { success: true, user: { id: user.id, email: user.email, displayName: user.displayName } }
     
   } catch (error) {
     console.error('Signup error:', error)
