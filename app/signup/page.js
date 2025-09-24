@@ -106,29 +106,27 @@ export default function SignupPage() {
       })
       
       // Call server action directly - this bypasses the 502 proxy issue
-      try {
-        await createAccount(formData)
-        // If we reach here without error, redirect was successful
-        console.log('Account created successfully')
-      } catch (error) {
-        // Check if this is actually a successful redirect
-        if (error && (error.message?.includes('NEXT_REDIRECT') || error.digest?.includes('NEXT_REDIRECT'))) {
-          console.log('Successful redirect detected via server action')
-          toast({
-            title: "Welcome to Streamer House!",
-            description: "Your account has been created successfully."
-          })
-          // The server action will handle the redirect
-          return
-        }
-        
-        // If it's a real error, show it
-        const errorMessage = error.message || 'Something went wrong'
+      const result = await createAccount(formData)
+      
+      if (result?.error) {
         toast({
           title: "Error",
-          description: errorMessage,
+          description: result.error,
           variant: "destructive"
         })
+      } else if (result?.success) {
+        toast({
+          title: "Welcome to Streamer House!",
+          description: "Your account has been created successfully."
+        })
+        
+        console.log('Account created successfully, redirecting...')
+        // Use window.location for redirect
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000)
+      } else {
+        console.log('Server action completed')
       }
       
     } catch (error) {
