@@ -257,59 +257,123 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Find Roommates</CardTitle>
-              <CardDescription>
-                Connect with local creators for collaborations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Discover creators in your area who are looking for roommates and collaboration opportunities.
-              </p>
-              <Button asChild className="w-full">
-                <Link href="/roommates">
-                  Browse Roommates
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Quick Actions & Chatroom Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Quick Actions - Left Side */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Find Roommates</CardTitle>
+                <CardDescription>
+                  Connect with local creators for collaborations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  Discover creators in your area who are looking for roommates and collaboration opportunities.
+                </p>
+                <Button asChild className="w-full">
+                  <Link href="/roommates">
+                    Browse Roommates
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Profile</CardTitle>
-              <CardDescription>
-                Manage your creator profile and settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 mb-4">
-                <div className="flex flex-wrap gap-1">
-                  {user?.platforms?.map((platform) => (
-                    <Badge key={platform} variant="outline">
-                      {platform}
-                    </Badge>
-                  ))}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Profile</CardTitle>
+                <CardDescription>
+                  Manage your creator profile and settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 mb-4">
+                  <div className="flex flex-wrap gap-1">
+                    {user?.platforms?.map((platform) => (
+                      <Badge key={platform} variant="outline">
+                        {platform}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {user?.niches?.map((niche) => (
+                      <Badge key={niche} variant="secondary">
+                        {niche}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {user?.niches?.map((niche) => (
-                    <Badge key={niche} variant="secondary">
-                      {niche}
-                    </Badge>
-                  ))}
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/settings">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Chatroom - Right Side */}
+          <div className="lg:col-span-1">
+            <Card className="h-[500px] flex flex-col">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center text-lg">
+                  <MessageCircle className="w-5 h-5 mr-2 text-green-600" />
+                  Community Chat
+                </CardTitle>
+                <CardDescription>
+                  Connect with other creators in real-time
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Messages Area */}
+                <ScrollArea className="flex-1 px-4 pb-4">
+                  <div className="space-y-3">
+                    {messages.map((message) => (
+                      <div 
+                        key={message.id} 
+                        className={`flex flex-col space-y-1 ${
+                          message.userId === user?.id ? 'items-end' : 'items-start'
+                        }`}
+                      >
+                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                          message.userId === user?.id 
+                            ? 'bg-purple-600 text-white' 
+                            : 'bg-gray-100 text-gray-900'
+                        }`}>
+                          {message.userId !== user?.id && (
+                            <div className="font-semibold text-xs mb-1 text-purple-600">
+                              {message.user}
+                            </div>
+                          )}
+                          <div>{message.message}</div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {message.timestamp}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                
+                {/* Message Input */}
+                <div className="border-t p-4">
+                  <form onSubmit={handleSendMessage} className="flex space-x-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1"
+                    />
+                    <Button type="submit" size="sm" disabled={!newMessage.trim()}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </form>
                 </div>
-              </div>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/settings">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>
