@@ -103,17 +103,36 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Use server action approach
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData)
-      })
+      // Try direct endpoint first, fallback if needed
+      const endpoints = ['/api/signup-direct', '/api/auth/signup']
+      let response = null
+      let lastError = null
+      
+      for (const endpoint of endpoints) {
+        try {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            credentials: 'include',
+            body: JSON.stringify(formData)
+          })
+          
+          if (response.ok) {
+            console.log(`Success with endpoint: ${endpoint}`)
+            break
+          } else if (response.status !== 502) {
+            // If not 502, use this response (it's a valid API response with error)
+            break
+          }
+        } catch (error) {
+          console.log(`Endpoint ${endpoint} failed:`, error.message)
+          lastError = error
+        }
+      }
 
       console.log('Response status:', response.status)
       console.log('Response ok:', response.ok)
