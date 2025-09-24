@@ -139,6 +139,12 @@ export default function SignupPage() {
     try {
       console.log('Submitting signup data:', formData)
       
+      // Add loading state feedback
+      toast({
+        title: "Creating Account...",
+        description: "Please wait while we set up your account."
+      })
+      
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 
@@ -150,6 +156,7 @@ export default function SignupPage() {
       })
 
       console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
       let data
       try {
         data = await response.json()
