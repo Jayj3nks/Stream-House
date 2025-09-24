@@ -1,49 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { Toaster } from '@/components/ui/toaster'
-import { ArrowLeft, ArrowRight, MapPin, Clock, Users, Gamepad2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, User, Gamepad2, MapPin, FileText } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-const NICHES = [
-  'Gaming', 'Fitness', 'Beauty', 'Cooking', 'Music', 'Dance', 'Comedy', 'Education', 
-  'Tech', 'Lifestyle', 'Travel', 'Art', 'Fashion', 'Business', 'Sports', 'Pets'
+const platforms = [
+  'TikTok', 'YouTube', 'Twitch', 'Instagram', 'Twitter/X', 'Discord',
+  'Facebook Gaming', 'Kick', 'Rumble', 'OnlyFans', 'Fansly'
 ]
 
-const GAMES = [
-  'Fortnite', 'League of Legends', 'Valorant', 'Minecraft', 'Call of Duty', 'Apex Legends',
-  'Among Us', 'Roblox', 'FIFA', 'Pokémon', 'Just Chatting', 'IRL Streaming', 'Art/Drawing',
-  'Music Production', 'Variety Gaming'
+const niches = [
+  'Gaming', 'Lifestyle', 'Beauty', 'Fitness', 'Comedy', 'Music',
+  'Art', 'Cooking', 'Tech', 'Fashion', 'Travel', 'Education',
+  'ASMR', 'Reaction', 'IRL Streaming', 'Just Chatting'
 ]
 
-const PLATFORMS = [
-  'TikTok', 'YouTube', 'Instagram', 'Twitch', 'Twitter/X', 'Facebook', 'Snapchat'
+const popularGames = [
+  'League of Legends', 'Valorant', 'Fortnite', 'Apex Legends', 'Call of Duty',
+  'Minecraft', 'Among Us', 'Fall Guys', 'Rocket League', 'Overwatch 2',
+  'World of Warcraft', 'Grand Theft Auto V', 'Counter-Strike 2', 'Dota 2'
 ]
 
-const TIME_SLOTS = [
-  '6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
-  '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
-  '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'
+const timeZones = [
+  'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York',
+  'America/Toronto', 'Europe/London', 'Europe/Paris', 'Europe/Berlin',
+  'Asia/Tokyo', 'Asia/Shanghai', 'Australia/Sydney'
 ]
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export default function SignupPage() {
-  const router = useRouter()
-  const { toast } = useToast()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
+  const router = useRouter()
 
-  // Form data
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -52,53 +51,13 @@ export default function SignupPage() {
     niches: [],
     games: [],
     city: '',
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    hasSchedule: true,
+    timeZone: 'America/Los_Angeles',
+    hasSchedule: false,
     schedule: {},
     bio: ''
   })
 
-  const handlePlatformToggle = (platform) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
-    }))
-  }
-
-  const handleNicheToggle = (niche) => {
-    setFormData(prev => ({
-      ...prev,
-      niches: prev.niches.includes(niche)
-        ? prev.niches.filter(n => n !== niche)
-        : [...prev.niches, niche]
-    }))
-  }
-
-  const handleGameToggle = (game) => {
-    setFormData(prev => ({
-      ...prev,
-      games: prev.games.includes(game)
-        ? prev.games.filter(g => g !== game)
-        : [...prev.games, game]
-    }))
-  }
-
-  const handleScheduleToggle = (day, timeSlot) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: prev.schedule[day]?.includes(timeSlot)
-          ? prev.schedule[day].filter(t => t !== timeSlot)
-          : [...(prev.schedule[day] || []), timeSlot]
-      }
-    }))
-  }
-
   const validateForm = () => {
-    // Basic validation
     if (!formData.email || !formData.password || !formData.displayName) {
       toast({
         title: "Validation Error",
@@ -139,17 +98,18 @@ export default function SignupPage() {
     try {
       console.log('Submitting signup data:', formData)
       
-      // Add loading state feedback
       toast({
         title: "Creating Account...",
         description: "Please wait while we set up your account."
       })
       
+      // Use server action approach
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         credentials: 'include',
         body: JSON.stringify(formData)
@@ -157,48 +117,58 @@ export default function SignupPage() {
 
       console.log('Response status:', response.status)
       console.log('Response ok:', response.ok)
-      let data
-      try {
-        const responseText = await response.text()
-        console.log('Raw response text:', responseText)
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
+      if (!response.ok) {
+        // Handle non-200 responses
+        let errorMessage = `HTTP ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status})`
+        }
         
-        data = JSON.parse(responseText)
-        console.log('Parsed data:', data)
-      } catch (jsonError) {
-        console.error('Failed to parse JSON response:', jsonError)
-        console.error('Response was not valid JSON')
         toast({
           title: "Error",
-          description: "Invalid response from server",
+          description: errorMessage,
           variant: "destructive"
         })
         return
       }
 
-      if (response.ok) {
-        toast({
-          title: "Welcome to Streamer House!",
-          description: "Your account has been created successfully."
-        })
+      const responseText = await response.text()
+      console.log('Raw response text:', responseText)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+        console.log('Parsed data:', data)
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError)
         
-        console.log('Account created successfully, redirecting to dashboard...')
-        
-        // Redirect immediately
-        router.push('/dashboard')
-      } else {
-        console.error('Signup failed with response:', response.status, data)
+        // If parsing fails but status was ok, likely server-side issue
         toast({
-          title: "Error",
-          description: data.error || `Failed to create account (${response.status})`,
+          title: "Server Error",
+          description: "Account creation failed. Please try again.",
           variant: "destructive"
         })
+        return
       }
-    } catch (error) {
-      console.error('Signup error:', error)
+
+      // Success case
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Welcome to Streamer House!",
+        description: "Your account has been created successfully."
+      })
+      
+      console.log('Account created successfully, redirecting to dashboard...')
+      router.push('/dashboard')
+      
+    } catch (error) {
+      console.error('Network error:', error)
+      toast({
+        title: "Network Error",
+        description: "Could not connect to server. Please check your connection and try again.",
         variant: "destructive"
       })
     } finally {
@@ -213,9 +183,9 @@ export default function SignupPage() {
       case 2:
         return formData.platforms.length > 0
       case 3:
-        return true // Location is optional
+        return true
       case 4:
-        return true // Bio is optional
+        return true
       default:
         return false
     }
@@ -241,243 +211,313 @@ export default function SignupPage() {
   }
   const prevStep = () => setStep(step - 1)
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-purple-600">Create Account</CardTitle>
-          <CardDescription>
-            Step {step} of 4 - Set up your creator profile
-          </CardDescription>
-          <div className="flex justify-center mt-4">
-            {[1, 2, 3, 4].map((stepNum) => (
-              <div
-                key={stepNum}
-                className={`w-3 h-3 rounded-full mx-1 ${
-                  stepNum <= step ? 'bg-purple-600' : 'bg-gray-300'
-                }`}
-              />
+  const toggleArrayItem = (array, item) => {
+    if (array.includes(item)) {
+      return array.filter(x => x !== item)
+    } else {
+      return [...array, item]
+    }
+  }
+
+  const renderStep1 = () => (
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center space-x-2">
+          <User className="w-5 h-5 text-purple-600" />
+          <CardTitle>Basic Information</CardTitle>
+        </div>
+        <CardDescription>
+          Let's start with your basic details
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email Address *</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            placeholder="your@email.com"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="displayName">Display Name *</Label>
+          <Input
+            id="displayName"
+            value={formData.displayName}
+            onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+            placeholder="How you'd like to be known"
+            required
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="password">Password *</Label>
+          <Input
+            id="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            placeholder="At least 8 characters"
+            required
+          />
+          <p className="text-xs text-gray-500">Must be at least 8 characters long</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const renderStep2 = () => (
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center space-x-2">
+          <Gamepad2 className="w-5 h-5 text-purple-600" />
+          <CardTitle>Platforms & Niches</CardTitle>
+        </div>
+        <CardDescription>
+          Choose the platforms you create content on and your niches
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <Label className="text-base font-medium">Platforms *</Label>
+          <p className="text-sm text-gray-500 mb-3">Select all platforms you create content on</p>
+          <div className="flex flex-wrap gap-2">
+            {platforms.map(platform => (
+              <Badge
+                key={platform}
+                variant={formData.platforms.includes(platform) ? "default" : "outline"}
+                className="cursor-pointer hover:bg-purple-100"
+                onClick={() => setFormData({
+                  ...formData,
+                  platforms: toggleArrayItem(formData.platforms, platform)
+                })}
+              >
+                {platform}
+              </Badge>
             ))}
           </div>
-        </CardHeader>
-        <CardContent>
-          {step === 1 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  value={formData.displayName}
-                  onChange={(e) => setFormData({...formData, displayName: e.target.value})}
-                  placeholder="How should other creators know you?"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  required
-                />
-              </div>
-            </div>
-          )}
+        </div>
 
-          {step === 2 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Users className="mr-2 h-5 w-5" />
-                Platforms & Niches
-              </h3>
-              
-              <div className="space-y-3">
-                <Label>Which platforms do you create content on?</Label>
-                <div className="flex flex-wrap gap-2">
-                  {PLATFORMS.map((platform) => (
-                    <Badge
-                      key={platform}
-                      variant={formData.platforms.includes(platform) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => handlePlatformToggle(platform)}
-                    >
-                      {platform}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label>What niches do you create content in?</Label>
-                <div className="flex flex-wrap gap-2">
-                  {NICHES.map((niche) => (
-                    <Badge
-                      key={niche}
-                      variant={formData.niches.includes(niche) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => handleNicheToggle(niche)}
-                    >
-                      {niche}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label>Which games do you play/stream? (Gaming creators)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GAMES.map((game) => (
-                    <Badge
-                      key={game}
-                      variant={formData.games.includes(game) ? "default" : "outline"}
-                      className="cursor-pointer text-xs"
-                      onClick={() => handleGameToggle(game)}
-                    >
-                      {game}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <MapPin className="mr-2 h-5 w-5" />
-                Location & Schedule
-              </h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="city">City/Location (for local collabs)</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({...formData, city: e.target.value})}
-                  placeholder="e.g., Los Angeles, CA"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timeZone">Time Zone</Label>
-                <Select 
-                  value={formData.timeZone} 
-                  onValueChange={(value) => setFormData({...formData, timeZone: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    <SelectItem value="Europe/London">GMT</SelectItem>
-                    <SelectItem value="Europe/Paris">Central European Time</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="hasSchedule"
-                    checked={formData.hasSchedule}
-                    onCheckedChange={(checked) => setFormData({...formData, hasSchedule: checked})}
-                  />
-                  <Label htmlFor="hasSchedule" className="flex items-center">
-                    <Clock className="mr-1 h-4 w-4" />
-                    I have a regular streaming/posting schedule
-                  </Label>
-                </div>
-              </div>
-
-              {formData.hasSchedule && (
-                <div className="space-y-3">
-                  <Label>When do you typically stream/post?</Label>
-                  <div className="space-y-2">
-                    {DAYS.map((day) => (
-                      <div key={day} className="space-y-2">
-                        <p className="text-sm font-medium">{day}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {TIME_SLOTS.map((timeSlot) => (
-                            <Badge
-                              key={`${day}-${timeSlot}`}
-                              variant={formData.schedule[day]?.includes(timeSlot) ? "default" : "outline"}
-                              className="cursor-pointer text-xs"
-                              onClick={() => handleScheduleToggle(day, timeSlot)}
-                            >
-                              {timeSlot}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>  
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold mb-4">About You</h3>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Tell us about yourself (optional)</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  placeholder="Share a bit about your content, goals, or what makes you unique..."
-                  rows={4}
-                />
-              </div>
-              
-              {!formData.hasSchedule && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-blue-800">
-                    No problem! You'll still be matched with creators based on your niches, 
-                    games, and location for flexible collaboration opportunities.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex justify-between mt-6">
-            {step > 1 && (
-              <Button variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-            )}
-            
-            {step < 4 ? (
-              <Button onClick={nextStep} className="ml-auto">
-                Next
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleSubmit} disabled={loading} className="ml-auto">
-                {loading ? "Creating Account..." : "Create Account"}
-              </Button>
-            )}
+        <div>
+          <Label className="text-base font-medium">Content Niches</Label>
+          <p className="text-sm text-gray-500 mb-3">What type of content do you create?</p>
+          <div className="flex flex-wrap gap-2">
+            {niches.map(niche => (
+              <Badge
+                key={niche}
+                variant={formData.niches.includes(niche) ? "default" : "outline"}
+                className="cursor-pointer hover:bg-blue-100"
+                onClick={() => setFormData({
+                  ...formData,
+                  niches: toggleArrayItem(formData.niches, niche)
+                })}
+              >
+                {niche}
+              </Badge>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div>
+          <Label className="text-base font-medium">Games (Optional)</Label>
+          <p className="text-sm text-gray-500 mb-3">Which games do you play or stream?</p>
+          <div className="flex flex-wrap gap-2">
+            {popularGames.map(game => (
+              <Badge
+                key={game}
+                variant={formData.games.includes(game) ? "default" : "outline"}
+                className="cursor-pointer hover:bg-green-100"
+                onClick={() => setFormData({
+                  ...formData,
+                  games: toggleArrayItem(formData.games, game)
+                })}
+              >
+                {game}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const renderStep3 = () => (
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center space-x-2">
+          <MapPin className="w-5 h-5 text-purple-600" />
+          <CardTitle>Location & Schedule</CardTitle>
+        </div>
+        <CardDescription>
+          Help us connect you with creators in your area and timezone
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="city">City/Location (Optional)</Label>
+          <Input
+            id="city"
+            value={formData.city}
+            onChange={(e) => setFormData({...formData, city: e.target.value})}
+            placeholder="Los Angeles, CA"
+          />
+          <p className="text-xs text-gray-500">This helps us find roommates and local collaborations</p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="timeZone">Time Zone</Label>
+          <select
+            id="timeZone"
+            value={formData.timeZone}
+            onChange={(e) => setFormData({...formData, timeZone: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          >
+            {timeZones.map(tz => (
+              <option key={tz} value={tz}>
+                {tz.replace('_', ' ').replace('/', ' - ')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="hasSchedule"
+              checked={formData.hasSchedule}
+              onCheckedChange={(checked) => setFormData({...formData, hasSchedule: checked})}
+            />
+            <Label htmlFor="hasSchedule">I have a regular streaming/content schedule</Label>
+          </div>
+          <p className="text-xs text-gray-500">We can help match you with creators who have compatible schedules</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const renderStep4 = () => (
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <div className="flex items-center space-x-2">
+          <FileText className="w-5 h-5 text-purple-600" />
+          <CardTitle>About You</CardTitle>
+        </div>
+        <CardDescription>
+          Tell us a bit about yourself and your content creation goals
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="bio">Bio (Optional)</Label>
+          <Textarea
+            id="bio"
+            value={formData.bio}
+            onChange={(e) => setFormData({...formData, bio: e.target.value.slice(0, 500)})}
+            placeholder="Tell us about your content, goals, or what you're looking for in the creator community..."
+            rows={4}
+          />
+          <p className="text-xs text-gray-500">{formData.bio.length}/500 characters</p>
+        </div>
+
+        <div className="bg-purple-50 p-4 rounded-lg">
+          <h4 className="font-semibold text-purple-800 mb-2">🎉 You're almost done!</h4>
+          <p className="text-sm text-purple-700">
+            After creating your account, you'll be able to join houses, find roommates, 
+            and connect with other creators in your niche and location.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link href="/" className="text-3xl font-bold text-purple-600 hover:text-purple-700">
+            Streamer House
+          </Link>
+          <p className="text-gray-600 mt-2">Join the creator community</p>
+          
+          {/* Progress indicator */}
+          <div className="flex justify-center mt-6 mb-8">
+            <div className="flex items-center space-x-4">
+              {[1, 2, 3, 4].map((num) => (
+                <div key={num} className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    num <= step 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {num}
+                  </div>
+                  {num < 4 && (
+                    <div className={`w-12 h-0.5 ${
+                      num < step ? 'bg-purple-600' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <p className="text-sm text-gray-500">Step {step} of 4</p>
+        </div>
+
+        {/* Form Steps */}
+        <div className="flex justify-center">
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between mt-8 max-w-2xl mx-auto">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={step === 1}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Previous</span>
+          </Button>
+
+          {step < 4 ? (
+            <Button
+              onClick={nextStep}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+            >
+              <span>Next</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700"
+            >
+              {loading ? "Creating Account..." : "Create Account"}
+            </Button>
+          )}
+        </div>
+
+        {/* Login link */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link href="/" className="text-purple-600 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
       <Toaster />
     </div>
   )
