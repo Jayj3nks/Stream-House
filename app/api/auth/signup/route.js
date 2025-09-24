@@ -40,7 +40,7 @@ export async function POST(request) {
       )
     }
 
-    const existingUser = await userRepo.getByEmail(email)
+    const existingUser = sharedStorage.getUserByEmail(email)
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" }, 
@@ -52,14 +52,14 @@ export async function POST(request) {
     let username = baseUsername
     let counter = 1
     
-    while (await userRepo.getByUsername(username)) {
+    while (sharedStorage.getUserByUsername(username)) {
       username = `${baseUsername}${counter}`
       counter++
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const user = await userRepo.create({
+    const user = sharedStorage.createUser({
       email: sanitizeText(email),
       passwordHash,
       displayName: sanitizeText(displayName),
