@@ -159,10 +159,15 @@ export default function SignupPage() {
       console.log('Response ok:', response.ok)
       let data
       try {
-        data = await response.json()
-        console.log('Response data:', data)
+        const responseText = await response.text()
+        console.log('Raw response text:', responseText)
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+        
+        data = JSON.parse(responseText)
+        console.log('Parsed data:', data)
       } catch (jsonError) {
         console.error('Failed to parse JSON response:', jsonError)
+        console.error('Response was not valid JSON')
         toast({
           title: "Error",
           description: "Invalid response from server",
