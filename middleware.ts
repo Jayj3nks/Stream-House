@@ -1,9 +1,6 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -31,23 +28,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  try {
-    // Verify the JWT token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Middleware: Valid token for', pathname, 'user:', (decoded as any)?.userId);
+  // Simple token presence check (avoid JWT verification in edge runtime)
+  // The actual validation will be done by individual pages
+  if (token && token.length > 10) {
+    console.log('Middleware: Token present, allowing access to', pathname);
     return NextResponse.next();
-  } catch (error) {
-    console.log('Middleware: Invalid token for', pathname, 'error:', error.message);
-    
-    // Instead of immediate redirect, allow one more chance for cookie to propagate
-    // This helps with timing issues after login
-    if (pathname === '/dashboard' && request.nextUrl.searchParams.has('retry') === false) {
-      console.log('Middleware: Giving dashboard one retry for cookie propagation');
-      const url = request.nextUrl.clone();
-      url.searchParams.set('retry', '1');
-      return NextResponse.redirect(url);
-    }
-    
+  } else {
+    console.log('Middleware: Invalid token format for', pathname);
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('next', pathname);
