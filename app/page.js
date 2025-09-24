@@ -26,11 +26,14 @@ export default function HomePage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      const response = await fetch('/api/auth-check')
       if (response.ok) {
-        // User is already authenticated, redirect to dashboard
-        router.push('/dashboard')
-        return
+        const data = await response.json()
+        if (data.authenticated && data.user) {
+          // User is already authenticated, redirect to dashboard
+          router.push('/dashboard')
+          return
+        }
       }
     } catch (error) {
       console.log('Not authenticated, showing login')
