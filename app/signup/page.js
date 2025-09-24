@@ -97,16 +97,61 @@ export default function SignupPage() {
     }))
   }
 
+  const validateForm = () => {
+    // Basic validation
+    if (!formData.email || !formData.password || !formData.displayName) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields: email, password, and display name.",
+        variant: "destructive"
+      })
+      return false
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Validation Error", 
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      })
+      return false
+    }
+
+    if (formData.platforms.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select at least one platform.",
+        variant: "destructive"
+      })
+      return false
+    }
+
+    return true
+  }
+
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return
+    }
+
     setLoading(true)
+    
     try {
+      console.log('Submitting signup data:', formData)
+      
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(formData)
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (response.ok) {
         toast({
@@ -114,16 +159,19 @@ export default function SignupPage() {
           description: "Your account has been created successfully."
         })
         
-        // Redirect immediately using Next.js router
-        router.push('/dashboard')
+        // Small delay to ensure cookie is set, then redirect
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 500)
       } else {
         toast({
           title: "Error",
-          description: data.error,
+          description: data.error || "Failed to create account",
           variant: "destructive"
         })
       }
     } catch (error) {
+      console.error('Signup error:', error)
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
