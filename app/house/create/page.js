@@ -94,36 +94,32 @@ export default function CreateHousePage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/houses/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...houseData,
-          niches: selectedNiches
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast({
-          title: "Success!",
-          description: "Your house has been created successfully!"
-        })
-        
-        // Redirect to the new house page
-        setTimeout(() => {
-          router.push(`/house/${data.house.id}`)
-        }, 1000)
-      } else {
-        const errorData = await response.json()
-        toast({
-          title: "Error",
-          description: errorData.error || "Failed to create house",
-          variant: "destructive"
-        })
+      // Use form submission to avoid 502 errors
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/house-create-form'
+      form.style.display = 'none'
+      
+      // Add all form fields as hidden inputs
+      const fields = {
+        name: houseData.name,
+        description: houseData.description,
+        maxMembers: houseData.maxMembers.toString(),
+        rules: houseData.rules,
+        niches: JSON.stringify(selectedNiches)
       }
+      
+      Object.entries(fields).forEach(([key, value]) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = value
+        form.appendChild(input)
+      })
+      
+      document.body.appendChild(form)
+      form.submit()
+      
     } catch (error) {
       console.error('Create house error:', error)
       toast({
@@ -131,7 +127,6 @@ export default function CreateHousePage() {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
-    } finally {
       setLoading(false)
     }
   }
