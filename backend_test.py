@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-Streamer House Backend API Testing Suite
-Tests Profile, Roommates & Dashboard fixes with TTL rules
+Stream-House Backend Authentication & Core API Testing
+Testing authentication persistence, data saving, and core endpoints
 """
 
 import requests
 import json
 import time
-import os
-from datetime import datetime, timedelta
+import random
+import string
+from datetime import datetime
 
 # Configuration
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
+BASE_URL = "https://fixmyapp.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
+TEST_USER_EMAIL = f"testuser{int(time.time())}@example.com"
+TEST_USER_PASSWORD = "testpassword123"
+TEST_USER_DISPLAY_NAME = "Test User"
 
 class StreamerHouseAPITester:
     def __init__(self):
