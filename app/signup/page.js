@@ -105,92 +105,28 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Try direct endpoint first, fallback if needed
-      const endpoints = ['/api/signup-direct', '/api/auth/signup']
-      let response = null
-      let lastError = null
+      // Use server action (bypasses proxy issues)
+      const result = await createAccount(formData)
       
-      for (const endpoint of endpoints) {
-        try {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
-            },
-            credentials: 'include',
-            body: JSON.stringify(formData)
-          })
-          
-          if (response.ok) {
-            console.log(`Success with endpoint: ${endpoint}`)
-            break
-          } else if (response.status !== 502) {
-            // If not 502, use this response (it's a valid API response with error)
-            break
-          }
-        } catch (error) {
-          console.log(`Endpoint ${endpoint} failed:`, error.message)
-          lastError = error
-        }
-      }
-
-      if (!response) {
-        throw lastError || new Error('All endpoints failed')
-      }
-
-      if (!response.ok) {
-        // Handle non-200 responses
-        let errorMessage = `HTTP ${response.status}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } catch {
-          errorMessage = `Server error (${response.status})`
-        }
-        
+      if (result?.error) {
         toast({
           title: "Error",
-          description: errorMessage,
+          description: result.error,
           variant: "destructive"
         })
-        return
-      }
-
-      const responseText = await response.text()
-      console.log('Raw response text:', responseText)
-      
-      let data
-      try {
-        data = JSON.parse(responseText)
-        console.log('Parsed data:', data)
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError)
-        
-        // If parsing fails but status was ok, likely server-side issue
+      } else {
+        // Server action handles redirect automatically via redirect()
         toast({
-          title: "Server Error",
-          description: "Account creation failed. Please try again.",
-          variant: "destructive"
+          title: "Welcome to Streamer House!",
+          description: "Your account has been created successfully."
         })
-        return
       }
-
-      // Success case
-      toast({
-        title: "Welcome to Streamer House!",
-        description: "Your account has been created successfully."
-      })
-      
-      console.log('Account created successfully, redirecting to dashboard...')
-      router.push('/dashboard')
       
     } catch (error) {
-      console.error('Network error:', error)
+      console.error('Server action error:', error)
       toast({
-        title: "Network Error",
-        description: "Could not connect to server. Please check your connection and try again.",
+        title: "Error",
+        description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
     } finally {
