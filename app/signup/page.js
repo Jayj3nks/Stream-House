@@ -163,7 +163,6 @@ export default function SignupPage() {
         console.log('Response data:', data)
       } catch (jsonError) {
         console.error('Failed to parse JSON response:', jsonError)
-        console.log('Response text:', await response.text())
         toast({
           title: "Error",
           description: "Invalid response from server",
