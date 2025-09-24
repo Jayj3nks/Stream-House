@@ -48,7 +48,7 @@ export default function RoommatesPage() {
 
   const loadUserData = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      const response = await fetch('/api/auth-check')
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
