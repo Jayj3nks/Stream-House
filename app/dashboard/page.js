@@ -125,6 +125,9 @@ export default function Dashboard() {
               <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 font-medium">
                 Dashboard
               </Link>
+              <Link href="/messages" className="text-gray-700 hover:text-purple-600 font-medium">
+                Messages
+              </Link>
               <Link href="/roommates" className="text-gray-700 hover:text-purple-600 font-medium">
                 Roommates
               </Link>
