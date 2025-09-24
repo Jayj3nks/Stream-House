@@ -134,8 +134,9 @@ export default function SignupPage() {
         }
       }
 
-      console.log('Response status:', response.status)
-      console.log('Response ok:', response.ok)
+      if (!response) {
+        throw lastError || new Error('All endpoints failed')
+      }
 
       if (!response.ok) {
         // Handle non-200 responses
