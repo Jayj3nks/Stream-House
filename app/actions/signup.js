@@ -2,9 +2,8 @@
 
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { userRepo } from '../../lib/repositories/memory/index.js'
+import { sharedStorage } from '../../lib/storage/shared.js'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -29,6 +28,8 @@ export async function createAccount(formData) {
       bio = '' 
     } = formData
     
+    console.log('Server action: Creating account for:', email)
+    
     if (!email || !password || !displayName) {
       return { error: "Email, password, and display name are required" }
     }
@@ -41,7 +42,7 @@ export async function createAccount(formData) {
       return { error: "Please select at least one platform" }
     }
 
-    const existingUser = await userRepo.getByEmail(email)
+    const existingUser = sharedStorage.getUserByEmail(email)
     if (existingUser) {
       return { error: "User already exists" }
     }
@@ -50,14 +51,14 @@ export async function createAccount(formData) {
     let username = baseUsername
     let counter = 1
     
-    while (await userRepo.getByUsername(username)) {
+    while (sharedStorage.getUserByUsername(username)) {
       username = `${baseUsername}${counter}`
       counter++
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const user = await userRepo.create({
+    const user = sharedStorage.createUser({
       email: sanitizeText(email),
       passwordHash,
       displayName: sanitizeText(displayName),
@@ -72,6 +73,12 @@ export async function createAccount(formData) {
       bio: sanitizeText(bio).slice(0, 500)
     })
 
+    if (!user) {
+      return { error: "Failed to create user" }
+    }
+
+    console.log('Server action: User created successfully:', user.id)
+
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     
     // Set cookie using Next.js server action
@@ -83,11 +90,13 @@ export async function createAccount(formData) {
       maxAge: 60 * 60 * 24 * 7,
     })
     
+    console.log('Server action: Cookie set, returning success')
+    
     // Return success instead of redirecting
     return { success: true, user: { id: user.id, email: user.email, displayName: user.displayName } }
     
   } catch (error) {
-    console.error('Signup error:', error)
+    console.error('Server action: Signup error:', error)
     return { error: "Internal server error" }
   }
 }
