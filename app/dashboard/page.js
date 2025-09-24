@@ -38,17 +38,17 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json()
         if (data.authenticated) {
-          setUser(data.user)
+          // handle either { user } or raw user
+          setUser(data?.user ?? data)
           await loadMyHouses()
-          setLoading(false)
-          return
+        } else {
+          router.push('/')
         }
+      } else {
+        router.push('/')
       }
-      
-      // If not authenticated, redirect to home
-      router.push('/')
     } catch (error) {
-      console.error('Auth check error:', error)
+      console.error('Error loading user data:', error)
       router.push('/')
     } finally {
       setLoading(false)
