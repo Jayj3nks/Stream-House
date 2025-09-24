@@ -114,28 +114,8 @@ export default function SignupPage() {
           description: "Your account has been created successfully."
         })
         
-        // Check if user is authenticated before redirecting
-        const checkAuthAndRedirect = async () => {
-          try {
-            const authResponse = await fetch('/api/auth/me')
-            if (authResponse.ok) {
-              router.push('/dashboard')
-            } else {
-              // If auth check fails, wait a bit more and try again
-              setTimeout(() => {
-                window.location.replace('/dashboard')
-              }, 1000)
-            }
-          } catch (error) {
-            // Fallback to window redirect
-            setTimeout(() => {
-              window.location.replace('/dashboard')
-            }, 1000)
-          }
-        }
-        
-        // Wait briefly for cookie to be set, then check auth
-        setTimeout(checkAuthAndRedirect, 500)
+        // Redirect immediately using Next.js router
+        router.push('/dashboard')
       } else {
         toast({
           title: "Error",
