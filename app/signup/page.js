@@ -105,44 +105,31 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Use server action with proper error handling
-      const result = await createAccount(formData)
+      // Create form data for direct submission
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/signup-form'
+      form.style.display = 'none'
       
-      if (result && result.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        })
-      } else {
-        // If no error returned, account was created successfully
-        // Server action should handle redirect, but add backup
-        toast({
-          title: "Welcome to Streamer House!",
-          description: "Your account has been created successfully."
-        })
-        
-        // Backup redirect in case server action redirect doesn't work
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 1000)
-      }
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = Array.isArray(value) ? JSON.stringify(value) : value
+        form.appendChild(input)
+      })
+      
+      document.body.appendChild(form)
+      form.submit()
       
     } catch (error) {
-      console.error('Server action error:', error)
-      // If we get here, there was a redirect or successful completion
-      if (error.message && error.message.includes('NEXT_REDIRECT')) {
-        // This is actually a successful redirect, not an error
-        console.log('Successful redirect detected')
-        return
-      }
-      
+      console.error('Submission error:', error)
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
-    } finally {
       setLoading(false)
     }
   }
