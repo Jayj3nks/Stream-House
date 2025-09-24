@@ -74,11 +74,15 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        setUsernameForm({ ...usernameForm, newUsername: userData.displayName })
-        setEmailForm({ ...emailForm, newEmail: userData.email })
-        setAppearInRoommateSearch(userData.roommateSearchVisible || false)
+        const data = await response.json()
+        if (data.authenticated && data.user) {
+          setUser(data.user)
+          setUsernameForm({ ...usernameForm, newUsername: data.user.displayName })
+          setEmailForm({ ...emailForm, newEmail: data.user.email })
+          setAppearInRoommateSearch(data.user.roommateOptIn || false)
+        } else {
+          window.location.href = '/'
+        }
       } else if (response.status === 401) {
         // Redirect to login with next parameter
         window.location.href = '/login?next=/settings'
