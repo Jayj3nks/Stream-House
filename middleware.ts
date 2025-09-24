@@ -1,28 +1,50 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import jwt from 'jsonwebtoken'
 
-const COOKIE_NAME = "access_token";
-const PROTECTED_PREFIXES = ["/dashboard", "/house", "/roommates", "/profile", "/settings"];
+const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
-  if (!isProtected) return NextResponse.next();
+  // Skip middleware for API routes, static files, and auth pages
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname === '/' ||
+    pathname === '/signup' ||
+    pathname === '/login'
+  ) {
+    return NextResponse.next();
+  }
 
-  const token = req.cookies.get(COOKIE_NAME)?.value;
+  // Get the access token from cookies
+  const token = request.cookies.get("access_token")?.value;
 
   if (!token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    url.searchParams.set("next", pathname);
+    console.log('Middleware: No token found, redirecting to home');
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    url.searchParams.set('next', pathname);
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  try {
+    // Verify the JWT token
+    jwt.verify(token, JWT_SECRET);
+    console.log('Middleware: Valid token, allowing access to', pathname);
+    return NextResponse.next();
+  } catch (error) {
+    console.log('Middleware: Invalid token, redirecting to home');
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    url.searchParams.set('next', pathname);
+    return NextResponse.redirect(url);
+  }
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/house/:path*", "/roommates/:path*", "/profile/:path*", "/settings/:path*"],
+  matcher: ["/dashboard/:path*", "/settings/:path*", "/house/:path*", "/roommates/:path*", "/profile/:path*"],
 };
