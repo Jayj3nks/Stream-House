@@ -182,7 +182,39 @@ export default function SignupPage() {
     }
   }
 
-  const nextStep = () => setStep(step + 1)
+  const canProceedToNextStep = () => {
+    switch (step) {
+      case 1:
+        return formData.email && formData.password && formData.displayName
+      case 2:
+        return formData.platforms.length > 0
+      case 3:
+        return true // Location is optional
+      case 4:
+        return true // Bio is optional
+      default:
+        return false
+    }
+  }
+
+  const nextStep = () => {
+    if (!canProceedToNextStep()) {
+      let message = "Please fill in all required fields"
+      if (step === 1) {
+        message = "Please fill in email, password, and display name"
+      } else if (step === 2) {
+        message = "Please select at least one platform"
+      }
+      
+      toast({
+        title: "Required Fields Missing",
+        description: message,
+        variant: "destructive"
+      })
+      return
+    }
+    setStep(step + 1)
+  }
   const prevStep = () => setStep(step - 1)
 
   return (
