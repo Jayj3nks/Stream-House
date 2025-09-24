@@ -136,10 +136,12 @@ export default function SignupPage() {
           })
           
           if (loginResponse.ok) {
-            console.log('Login successful, redirecting to dashboard...')
+            console.log('Login successful, waiting for cookie to propagate...')
+            // Wait longer for cookie to propagate properly
             setTimeout(() => {
+              console.log('Redirecting to dashboard...')
               window.location.replace('/dashboard')
-            }, 1000)
+            }, 2000) // Increased delay
           } else {
             console.error('Login after signup failed')
             toast({
