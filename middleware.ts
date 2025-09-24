@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
 
   if (!token) {
-    console.log('Middleware: No token found, redirecting to home');
+    console.log('Middleware: No token found for', pathname);
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('next', pathname);
@@ -33,11 +33,21 @@ export function middleware(request: NextRequest) {
 
   try {
     // Verify the JWT token
-    jwt.verify(token, JWT_SECRET);
-    console.log('Middleware: Valid token, allowing access to', pathname);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('Middleware: Valid token for', pathname, 'user:', (decoded as any)?.userId);
     return NextResponse.next();
   } catch (error) {
-    console.log('Middleware: Invalid token, redirecting to home');
+    console.log('Middleware: Invalid token for', pathname, 'error:', error.message);
+    
+    // Instead of immediate redirect, allow one more chance for cookie to propagate
+    // This helps with timing issues after login
+    if (pathname === '/dashboard' && request.nextUrl.searchParams.has('retry') === false) {
+      console.log('Middleware: Giving dashboard one retry for cookie propagation');
+      const url = request.nextUrl.clone();
+      url.searchParams.set('retry', '1');
+      return NextResponse.redirect(url);
+    }
+    
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('next', pathname);
