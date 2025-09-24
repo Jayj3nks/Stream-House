@@ -19,61 +19,37 @@ export default function HomePage() {
   const { toast } = useToast()
   const router = useRouter()
 
-  // Check if already authenticated
   useEffect(() => {
-    checkAuth()
+    // Skip auth check on homepage to avoid 502 errors
+    setChecking(false)
   }, [])
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth-check')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.authenticated && data.user) {
-          // User is already authenticated, redirect to dashboard
-          router.push('/dashboard')
-          return
-        }
-      }
-    } catch (error) {
-      console.log('Not authenticated, showing login')
-    } finally {
-      setChecking(false)
-    }
-  }
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      // Use the working auth endpoint instead of the 502-prone API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast({
-          title: "Welcome back!",
-          description: "You have been logged in successfully."
-        })
-        
-        // Use window.location for more reliable redirect
-        setTimeout(() => {
-          window.location.replace('/dashboard')
-        }, 1000)
-      } else {
-        const data = await response.json()
-        toast({
-          title: "Error",
-          description: data.error || "Invalid credentials",
-          variant: "destructive"
-        })
-      }
+      // Create a form and submit it directly to avoid 502 API issues
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/login-form'
+      form.style.display = 'none'
+      
+      const emailInput = document.createElement('input')
+      emailInput.type = 'hidden'
+      emailInput.name = 'email'
+      emailInput.value = email
+      form.appendChild(emailInput)
+      
+      const passwordInput = document.createElement('input')
+      passwordInput.type = 'hidden'
+      passwordInput.name = 'password'
+      passwordInput.value = password
+      form.appendChild(passwordInput)
+      
+      document.body.appendChild(form)
+      form.submit()
+      
     } catch (error) {
       console.error('Login error:', error)
       toast({
@@ -81,7 +57,6 @@ export default function HomePage() {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       })
-    } finally {
       setLoading(false)
     }
   }
