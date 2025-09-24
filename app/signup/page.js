@@ -105,25 +105,38 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Use server action (bypasses proxy issues)
+      // Use server action with proper error handling
       const result = await createAccount(formData)
       
-      if (result?.error) {
+      if (result && result.error) {
         toast({
           title: "Error",
           description: result.error,
           variant: "destructive"
         })
       } else {
-        // Server action handles redirect automatically via redirect()
+        // If no error returned, account was created successfully
+        // Server action should handle redirect, but add backup
         toast({
           title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
+        
+        // Backup redirect in case server action redirect doesn't work
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1000)
       }
       
     } catch (error) {
       console.error('Server action error:', error)
+      // If we get here, there was a redirect or successful completion
+      if (error.message && error.message.includes('NEXT_REDIRECT')) {
+        // This is actually a successful redirect, not an error
+        console.log('Successful redirect detected')
+        return
+      }
+      
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
