@@ -9,7 +9,7 @@ import json
 import time
 from datetime import datetime
 
-BASE_URL = 'https://streamhouse-fix.preview.emergentagent.com'
+BASE_URL = 'https://fixmyapp.preview.emergentagent.com'
 API_BASE = f"{BASE_URL}/api"
 
 def test_working_endpoints():

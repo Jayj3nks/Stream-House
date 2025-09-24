@@ -7,7 +7,7 @@ import requests
 import json
 import os
 
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://streamhouse-fix.preview.emergentagent.com')
+BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 def test_auth_endpoints():

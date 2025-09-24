@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use the public URL from environment
-NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://streamhouse-fix.preview.emergentagent.com')
+NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
 BASE_URL = f"{NEXT_PUBLIC_BASE_URL}/api"
 
 def test_engagement_flow():

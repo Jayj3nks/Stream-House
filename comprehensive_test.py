@@ -16,7 +16,7 @@ import string
 import os
 
 # Configuration
-NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://streamhouse-fix.preview.emergentagent.com')
+NEXT_PUBLIC_BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
 BASE_URL = f"{NEXT_PUBLIC_BASE_URL}/api"
 HEADERS = {"Content-Type": "application/json"}
 
