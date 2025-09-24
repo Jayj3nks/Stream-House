@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { sharedStorage } from '../../../../../lib/storage/shared.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
