@@ -122,11 +122,11 @@ export default function SignupPage() {
         
         console.log('Account created successfully:', result.user)
         
-        // Wait a moment for cookie to be set, then redirect
+        // Force redirect using window.location.replace instead of href
+        console.log('Redirecting to dashboard...')
         setTimeout(() => {
-          console.log('Redirecting to dashboard...')
-          window.location.href = '/dashboard'
-        }, 1500)
+          window.location.replace('/dashboard')
+        }, 1000)
       } else {
         console.log('Unexpected result:', result)
         toast({
