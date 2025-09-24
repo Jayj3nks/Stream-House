@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { userRepo } from '../../../lib/repositories/memory/index.js'
+import { sharedStorage } from '../../../lib/storage/shared.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
 export async function GET(request) {
   try {
     const token = request.cookies.get("access_token")?.value
+    
+    console.log('Auth check: Token present:', !!token)
     
     if (!token) {
       return NextResponse.json(
@@ -18,22 +20,26 @@ export async function GET(request) {
     let decoded
     try {
       decoded = jwt.verify(token, JWT_SECRET)
+      console.log('Auth check: Token valid for user:', decoded.userId)
     } catch (jwtError) {
+      console.log('Auth check: Invalid token:', jwtError.message)
       return NextResponse.json(
         { error: "Invalid token", authenticated: false }, 
         { status: 401 }
       )
     }
 
-    const user = await userRepo.getById(decoded.userId)
+    const user = sharedStorage.getUserById(decoded.userId)
     
     if (!user) {
+      console.log('Auth check: User not found:', decoded.userId)
       return NextResponse.json(
         { error: "User not found", authenticated: false }, 
         { status: 401 }
       )
     }
 
+    console.log('Auth check: Success for user:', user.email)
     const { passwordHash: _, ...userWithoutPassword } = user
     return NextResponse.json({
       authenticated: true,
