@@ -70,7 +70,7 @@ export default function SettingsPage() {
         return
       }
 
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/api/auth-check', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (response.ok) {
