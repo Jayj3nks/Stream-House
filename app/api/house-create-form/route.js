@@ -105,7 +105,7 @@ export async function POST(request) {
     console.log('Form: Created house:', house.name, 'for user:', user.email)
 
     // Redirect to success page or dashboard with success message
-    const response = NextResponse.redirect('https://fixmyapp.preview.emergentagent.com/dashboard?house_created=1', 302)
+    const response = NextResponse.redirect('https://api-dynamic-fix.preview.emergentagent.com/dashboard?house_created=1', 302)
     
     return response
     

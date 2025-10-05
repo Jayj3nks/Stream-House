@@ -61,7 +61,7 @@ export async function POST(request) {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     
     // Create response with redirect to dashboard
-    const response = NextResponse.redirect('https://fixmyapp.preview.emergentagent.com/dashboard', 302)
+    const response = NextResponse.redirect('https://api-dynamic-fix.preview.emergentagent.com/dashboard', 302)
     
     response.cookies.set("access_token", token, {
       httpOnly: true,

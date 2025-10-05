@@ -20,7 +20,7 @@ import concurrent.futures
 import threading
 
 # Configuration
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
+BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://api-dynamic-fix.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 class StreamerHouseComprehensiveTester:

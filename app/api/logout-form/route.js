@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 export async function POST() {
-  const response = NextResponse.redirect('https://fixmyapp.preview.emergentagent.com/', 302)
+  const response = NextResponse.redirect('https://api-dynamic-fix.preview.emergentagent.com/', 302)
   
   response.cookies.set("access_token", "", {
     httpOnly: true,

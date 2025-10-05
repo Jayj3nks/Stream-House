@@ -12,7 +12,7 @@ import string
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://fixmyapp.preview.emergentagent.com"
+BASE_URL = "https://api-dynamic-fix.preview.emergentagent.com"
 API_BASE = f"{BASE_URL}/api"
 TEST_USER_EMAIL = f"testuser{int(time.time())}@example.com"
 TEST_USER_PASSWORD = "testpassword123"

@@ -8,7 +8,7 @@ import json
 import os
 import time
 
-BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://fixmyapp.preview.emergentagent.com')
+BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://api-dynamic-fix.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 def test_critical_functionality():
