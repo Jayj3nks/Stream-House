@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { userRepo } from '../../../../lib/repositories/memory/index.js'
