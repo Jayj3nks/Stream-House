@@ -38,47 +38,38 @@ class StreamHouseAPITester:
         self.created_username = None
         
     def test_signup_and_get_username(self):
-        """Test 1: Signup flow using /api/auth/signup API endpoint"""
+        """Test signup and capture the created username for profile testing"""
+        print("🧪 Testing Enhanced Signup with Profile Fields...")
+        
         try:
-            signup_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password,
-                "displayName": self.test_user_display_name,
-                "platforms": ["TikTok", "YouTube"],
-                "niches": ["Gaming", "Tech"],
-                "games": ["Fortnite", "Valorant"],
-                "city": "Los Angeles",
-                "timeZone": "America/Los_Angeles",
-                "hasSchedule": True,
-                "schedule": {"monday": "9-17", "tuesday": "9-17"},
-                "bio": "Test user for authentication testing"
-            }
+            response = self.session.post(
+                f"{API_BASE}/auth/signup",
+                json=self.test_user_data,
+                timeout=10
+            )
             
-            response = self.session.post(f"{API_BASE}/auth/signup", json=signup_data)
+            print(f"Signup Response Status: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
-                if 'token' in data and 'user' in data:
-                    # Check if cookie was set
-                    cookies = response.cookies
-                    has_auth_cookie = 'access_token' in cookies
-                    
-                    self.log_test(
-                        "Signup API Endpoint", 
-                        True, 
-                        f"User created successfully. Token: {len(data['token'])} chars, Cookie set: {has_auth_cookie}"
-                    )
-                    return True, data
+                self.created_username = data['user']['username']
+                print(f"✅ SIGNUP SUCCESS - Username created: {self.created_username}")
+                print(f"✅ Display Name: {data['user']['displayName']}")
+                
+                # Store cookies for authentication
+                if 'access_token' in [cookie.name for cookie in response.cookies]:
+                    print("✅ Authentication cookie set successfully")
+                    return True
                 else:
-                    self.log_test("Signup API Endpoint", False, f"Missing token or user in response: {data}")
-                    return False, None
+                    print("❌ No authentication cookie found in response")
+                    return False
             else:
-                self.log_test("Signup API Endpoint", False, f"Status: {response.status_code}, Response: {response.text}")
-                return False, None
+                print(f"❌ SIGNUP FAILED: {response.text}")
+                return False
                 
         except Exception as e:
-            self.log_test("Signup API Endpoint", False, f"Exception: {str(e)}")
-            return False, None
+            print(f"❌ SIGNUP ERROR: {str(e)}")
+            return False
 
     def test_login_api_endpoint(self):
         """Test 2: Login flow using /api/auth/login"""
