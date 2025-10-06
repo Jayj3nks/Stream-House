@@ -29,26 +29,44 @@ export default function HomePage() {
     setLoading(true)
 
     try {
-      // Create a form and submit it directly to avoid 502 API issues
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = '/api/login-form'
-      form.style.display = 'none'
+      console.log('Attempting login for:', email)
       
-      const emailInput = document.createElement('input')
-      emailInput.type = 'hidden'
-      emailInput.name = 'email'
-      emailInput.value = email
-      form.appendChild(emailInput)
-      
-      const passwordInput = document.createElement('input')
-      passwordInput.type = 'hidden'
-      passwordInput.name = 'password'
-      passwordInput.value = password
-      form.appendChild(passwordInput)
-      
-      document.body.appendChild(form)
-      form.submit()
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for cookie handling
+        body: JSON.stringify({
+          email,
+          password
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Login successful:', data.user?.email)
+        
+        toast({
+          title: "Welcome back!",
+          description: "Login successful. Redirecting..."
+        })
+        
+        // Wait a moment for cookie to be set, then redirect
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000)
+        
+      } else {
+        const errorData = await response.json()
+        console.error('Login failed:', errorData.error)
+        toast({
+          title: "Login Failed",
+          description: errorData.error || "Invalid credentials",
+          variant: "destructive"
+        })
+        setLoading(false)
+      }
       
     } catch (error) {
       console.error('Login error:', error)
