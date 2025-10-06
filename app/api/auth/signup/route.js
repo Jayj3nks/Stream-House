@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -26,6 +28,8 @@ export async function POST(request) {
       bio = '' 
     } = await request.json()
     
+    console.log('MongoDB: Signup attempt for:', email)
+    
     if (!email || !password || !displayName) {
       return NextResponse.json(
         { error: "Email, password, and display name are required" }, 
@@ -40,7 +44,7 @@ export async function POST(request) {
       )
     }
 
-    const existingUser = sharedStorage.getUserByEmail(email)
+    const existingUser = await mongoUserRepo.getUserByEmail(email)
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" }, 
@@ -52,14 +56,14 @@ export async function POST(request) {
     let username = baseUsername
     let counter = 1
     
-    while (sharedStorage.getUserByUsername(username)) {
+    while (await mongoUserRepo.getUserByUsername(username)) {
       username = `${baseUsername}${counter}`
       counter++
     }
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    const user = sharedStorage.createUser({
+    const user = await mongoUserRepo.createUser({
       email: sanitizeText(email),
       passwordHash,
       displayName: sanitizeText(displayName),
@@ -73,6 +77,13 @@ export async function POST(request) {
       schedule: schedule || {},
       bio: sanitizeText(bio).slice(0, 500)
     })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Failed to create user" }, 
+        { status: 500 }
+      )
+    }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     const { passwordHash: _, ...userWithoutPassword } = user
@@ -92,12 +103,12 @@ export async function POST(request) {
       domain: undefined // Let browser set the correct domain
     })
     
-    console.log('API: Signup cookie set, token length:', token.length)
+    console.log('MongoDB: Signup successful, cookie set, token length:', token.length)
     
     return response
     
   } catch (error) {
-    console.error('Signup error:', error)
+    console.error('MongoDB: Signup error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

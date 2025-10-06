@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -9,7 +11,7 @@ export async function POST(request) {
   try {
     const { email, password } = await request.json()
     
-    console.log('API: Login attempt for:', email)
+    console.log('MongoDB: Login attempt for:', email)
     
     if (!email || !password) {
       return NextResponse.json(
@@ -18,9 +20,9 @@ export async function POST(request) {
       )
     }
 
-    const user = sharedStorage.getUserByEmail(email)
+    const user = await mongoUserRepo.getUserByEmail(email)
     if (!user) {
-      console.log('API: User not found:', email)
+      console.log('MongoDB: User not found:', email)
       return NextResponse.json(
         { error: "Invalid credentials" }, 
         { status: 401 }
@@ -29,14 +31,14 @@ export async function POST(request) {
 
     const isValidPassword = await bcrypt.compare(password, user.passwordHash)
     if (!isValidPassword) {
-      console.log('API: Invalid password for:', email)
+      console.log('MongoDB: Invalid password for:', email)
       return NextResponse.json(
         { error: "Invalid credentials" }, 
         { status: 401 }
       )
     }
 
-    console.log('API: Login successful for:', email)
+    console.log('MongoDB: Login successful for:', email)
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     const { passwordHash: _, ...userWithoutPassword } = user
@@ -56,12 +58,12 @@ export async function POST(request) {
       domain: undefined // Let browser set the correct domain
     })
     
-    console.log('API: Cookie set for login, token length:', token.length)
+    console.log('MongoDB: Login cookie set, token length:', token.length)
     
     return response
     
   } catch (error) {
-    console.error('API: Login error:', error)
+    console.error('MongoDB: Login error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

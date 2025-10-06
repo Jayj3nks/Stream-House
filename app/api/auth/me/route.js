@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -18,7 +18,7 @@ export async function GET(request) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET)
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -27,11 +27,13 @@ export async function GET(request) {
       )
     }
 
+    console.log('MongoDB: Auth me successful for:', user.email)
+    
     const { passwordHash: _, ...userWithoutPassword } = user
     return NextResponse.json(userWithoutPassword)
     
   } catch (error) {
-    console.error('Auth me error:', error)
+    console.error('MongoDB: Auth me error:', error)
     return NextResponse.json(
       { error: "Invalid token" }, 
       { status: 401 }
