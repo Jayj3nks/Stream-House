@@ -616,4 +616,4 @@ class StreamHouseAPITester:
 
 if __name__ == "__main__":
     tester = StreamHouseAPITester()
-    results = tester.run_comprehensive_test()
+    results = tester.run_comprehensive_mongodb_test()
