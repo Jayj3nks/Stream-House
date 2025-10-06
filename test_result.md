@@ -536,8 +536,8 @@ frontend:
     implemented: true
     working: false
     file: "/app/app/profile/[username]/page.js"
-    stuck_count: 1
-    priority: "medium"
+    stuck_count: 2
+    priority: "high"
     needs_retesting: false
     status_history:
         - working: "NA"
@@ -552,6 +552,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ STILL FAILING AFTER BACKEND FIXES - Profile page accessible via direct URL but shows 'Profile not found' error. API integration issue persists with /api/users/{username} endpoint returning 404 errors. Username resolution may be the issue (tested with 'alexstreamer' username)."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL API INTEGRATION FAILURE - Comprehensive testing confirms profile pages completely broken. All tested usernames (newly created users, generic usernames like 'testuser', specific usernames like 'alexstreamer') return 404 errors from /api/users/{username} endpoint. Frontend profile page structure is implemented correctly with proper error handling, but backend API integration is non-functional. This affects both user profile display and the ability to view other users' profiles."
 
   - task: "Help/Bug Report System"
     implemented: true
