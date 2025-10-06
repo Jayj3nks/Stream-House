@@ -339,10 +339,10 @@ backend:
           agent: "testing"
           comment: "✅ COMPREHENSIVE SETTINGS API INTEGRATION TESTING COMPLETED - /api/settings/roommate-search endpoint working perfectly for privacy toggle functionality. Tested: 1) Privacy toggle OFF (appearInRoommateSearch: false) - returns success with proper message, 2) Privacy toggle ON (appearInRoommateSearch: true) - returns success with proper message, 3) Proper authentication required (uses JWT cookies), 4) Updates user roommateOptIn field correctly in storage. Privacy settings integration fully functional."
 
-  - task: "Media Upload API Endpoint"
+  - task: "Profile Picture Upload API Endpoint"
     implemented: true
     working: true
-    file: "/app/app/api/[[...path]]/route.js"
+    file: "/app/app/api/upload/avatar/route.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -350,6 +350,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ VERIFIED IMPLEMENTED - /api/media/upload endpoint implemented and working. Returns proper media URL and ID. Profile picture upload system functional with avatar URL generation."
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE AVATAR UPLOAD TESTING COMPLETED - /api/upload/avatar endpoint working perfectly for profile picture functionality. Tested: 1) File upload validation (image type required, 5MB size limit), 2) Authentication required (JWT cookies), 3) Avatar URL generation using dicebear.com service, 4) User profile update with new avatarUrl, 5) Proper success response with avatarUrl and message. Profile picture upload system fully functional."
 
   - task: "Cookie-based Authentication System"
     implemented: true
