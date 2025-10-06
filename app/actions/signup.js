@@ -82,26 +82,29 @@ export async function createAccount(formData) {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     
     console.log('Server action: Setting authentication cookie...')
-    // Set cookie using Next.js server action with more explicit settings
-    cookies().set("access_token", token, {
+    // Set cookie using Next.js server action
+    const cookieStore = cookies()
+    cookieStore.set("access_token", token, {
       httpOnly: true,
       sameSite: "lax", 
-      secure: false, // Disable secure for testing
+      secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
     
     // Verify the cookie was set by trying to read it back
-    const setCookie = cookies().get("access_token")
+    const setCookie = cookieStore.get("access_token")
     console.log('Server action: Cookie set result:', !!setCookie?.value)
     
     console.log('Server action: Returning success with redirect instruction')
     
-    // Return success with explicit redirect instruction
+    // Return success with user data and redirect instruction
+    const { passwordHash: _, ...userWithoutPassword } = user
     return { 
       success: true, 
-      user: { id: user.id, email: user.email, displayName: user.displayName },
-      redirect: '/dashboard'
+      user: userWithoutPassword,
+      redirect: '/dashboard',
+      authenticated: true
     }
     
   } catch (error) {
