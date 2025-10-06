@@ -309,7 +309,7 @@ backend:
   - task: "Users Username API Endpoint"
     implemented: true
     working: true
-    file: "/app/app/api/[[...path]]/route.js"
+    file: "/app/app/api/users/[username]/route.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -320,6 +320,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ VERIFIED FIXED - /api/users/{username} endpoint now working correctly. Returns complete user profile with posts, clips made, and points breakdown. Previously reported 404 errors have been resolved."
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE PROFILE API INTEGRATION TESTING COMPLETED - /api/users/{username} endpoint working perfectly with actual usernames. Tested with newly created user 'testuser1759715885' and verified: 1) Returns correct user profile data (ID, displayName, username, email, platforms), 2) Includes proper stats structure (totalPosts, totalClips, totalPoints, engagePoints, clipPoints, collabPoints), 3) Returns posts and clips arrays, 4) Profile data matches signup data exactly. All profile API integration issues have been resolved."
 
   - task: "Settings Roommate Search API Endpoint"
     implemented: true
