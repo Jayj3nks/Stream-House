@@ -17,9 +17,23 @@ API_BASE = urljoin(BASE_URL, '/api')
 class AuthenticationTester:
     def __init__(self):
         self.session = requests.Session()
-        self.auth_token = None
-        self.test_user_id = None
-        self.test_results = []
+        self.test_user_data = {
+            "email": f"testauth{int(time.time())}@example.com",
+            "password": "testpassword123",
+            "displayName": "Test Auth User",
+            "platforms": ["TikTok", "YouTube"],
+            "niches": ["Gaming"],
+            "games": ["Fortnite"],
+            "city": "Los Angeles",
+            "timeZone": "America/Los_Angeles",
+            "hasSchedule": True,
+            "schedule": {"monday": "9-12"},
+            "bio": "Testing authentication flow"
+        }
+        self.login_data = {
+            "email": self.test_user_data["email"],
+            "password": self.test_user_data["password"]
+        }
         
     def log_test(self, test_name, success, details=""):
         """Log test results"""
