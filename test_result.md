@@ -327,7 +327,7 @@ backend:
   - task: "Settings Roommate Search API Endpoint"
     implemented: true
     working: true
-    file: "/app/app/api/[[...path]]/route.js"
+    file: "/app/app/api/settings/roommate-search/route.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -335,6 +335,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ VERIFIED FIXED - /api/settings/roommate-search endpoint working perfectly. Can toggle roommate search visibility (appearInRoommateSearch) successfully. Proper validation and response handling."
+        - working: true
+          agent: "testing"
+          comment: "✅ COMPREHENSIVE SETTINGS API INTEGRATION TESTING COMPLETED - /api/settings/roommate-search endpoint working perfectly for privacy toggle functionality. Tested: 1) Privacy toggle OFF (appearInRoommateSearch: false) - returns success with proper message, 2) Privacy toggle ON (appearInRoommateSearch: true) - returns success with proper message, 3) Proper authentication required (uses JWT cookies), 4) Updates user roommateOptIn field correctly in storage. Privacy settings integration fully functional."
 
   - task: "Media Upload API Endpoint"
     implemented: true
