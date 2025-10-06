@@ -71,7 +71,7 @@ class AuthenticationTester:
             print(f"   ❌ Signup test failed: {str(e)}")
             return False
     
-    def test_unchanged_routes(self):
+    def test_login_with_cookies(self):
         """Test routes that were NOT modified (no dynamic export)"""
         print("\n🔍 TESTING UNCHANGED ROUTES (No dynamic export)")
         
