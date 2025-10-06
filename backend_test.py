@@ -1,26 +1,24 @@
 #!/usr/bin/env python3
 """
-Stream House Authentication System Testing
-Testing the cleaned up authentication system to verify:
-1. Signup flow using /api/auth/signup API endpoint
-2. Login flow using /api/auth/login 
-3. Cookie persistence across both signup and login
-4. Middleware properly recognizes authentication cookies
-5. Protected routes work with authentication cookies
-6. The cleanup of duplicate endpoints doesn't break functionality
+Backend API Testing for Stream House - Profile API Integration Fix Testing
+Testing the newly fixed API endpoints as requested in review:
+1. Profile API Integration: /api/users/{username}
+2. Settings API Integration: /api/settings/roommate-search
+3. User Profile Data Display: /api/auth/me
+4. Profile Picture Upload: /api/upload/avatar
 """
 
 import requests
 import json
 import time
 import os
-from datetime import datetime
+from io import BytesIO
 
 # Get base URL from environment
 BASE_URL = os.getenv('NEXT_PUBLIC_BASE_URL', 'https://api-dynamic-fix.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
-class AuthenticationTester:
+class StreamHouseAPITester:
     def __init__(self):
         self.session = requests.Session()
         self.test_results = []
