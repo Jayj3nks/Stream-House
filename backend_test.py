@@ -380,14 +380,6 @@ class StreamHouseAPITester:
 if __name__ == "__main__":
     tester = StreamHouseAPITester()
     tester.run_all_tests()
-                "displayName": "Test User Profile",
-                "platforms": ["YouTube", "Twitch"],
-                "niches": ["Gaming", "Tech"],
-                "games": ["Minecraft", "Valorant"],
-                "city": "New York",
-                "timeZone": "America/New_York",
-                "hasSchedule": True,
-                "schedule": {"monday": "9-17", "tuesday": "9-17"},
                 "bio": "Test user for API testing"
             }
             
