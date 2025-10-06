@@ -105,7 +105,7 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Call server action directly - this bypasses the 502 proxy issue
+      // Call server action directly - this sets the authentication cookie
       const result = await createAccount(formData)
       
       if (result?.error) {
@@ -114,58 +114,24 @@ export default function SignupPage() {
           description: result.error,
           variant: "destructive"
         })
-      } else if (result?.success) {
+      } else if (result?.success && result?.authenticated) {
         toast({
           title: "Welcome to Streamer House!",
           description: "Your account has been created successfully."
         })
         
         console.log('Account created successfully:', result.user)
+        console.log('Authentication cookie set, redirecting to dashboard...')
         
-        // Now login to set the cookie properly via API
-        console.log('Logging in to set authentication cookie...')
-        try {
-          const loginResponse = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password
-            })
-          })
-          
-          if (loginResponse.ok) {
-            console.log('Login successful, waiting for cookie to propagate...')
-            // Wait longer for cookie to propagate properly
-            setTimeout(() => {
-              console.log('Redirecting to dashboard...')
-              window.location.replace('/dashboard')
-            }, 2000) // Increased delay
-          } else {
-            console.error('Login after signup failed')
-            toast({
-              title: "Account Created",
-              description: "Please sign in with your new account.",
-              variant: "default"
-            })
-            setTimeout(() => {
-              window.location.replace('/')
-            }, 2000)
-          }
-        } catch (loginError) {
-          console.error('Login error:', loginError)
-          toast({
-            title: "Account Created",
-            description: "Please sign in with your new account.",
-            variant: "default"
-          })
-          setTimeout(() => {
-            window.location.replace('/')
-          }, 2000)
-        }
+        // Server action already set the cookie, now redirect
+        // Use a shorter delay since cookie is already set
+        setTimeout(() => {
+          console.log('Redirecting to dashboard...')
+          window.location.href = '/dashboard'
+        }, 1000)
+        
       } else {
-        console.log('Unexpected result:', result)
+        console.log('Signup completed but authentication failed, redirecting to login')
         toast({
           title: "Account Created", 
           description: "Please sign in with your new account.",
@@ -178,7 +144,7 @@ export default function SignupPage() {
       }
       
     } catch (error) {
-      console.error('Outer error:', error)
+      console.error('Signup error:', error)
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
