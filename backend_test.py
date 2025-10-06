@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Stream House - Profile API Integration Fix Testing
-Testing the newly fixed API endpoints as requested in review:
-1. Profile API Integration: /api/users/{username}
-2. Settings API Integration: /api/settings/roommate-search
-3. User Profile Data Display: /api/auth/me
-4. Profile Picture Upload: /api/upload/avatar
+Backend API Testing for Stream House - MongoDB Integration Comprehensive Testing
+Testing the MongoDB-based system to verify all issues are resolved as requested in review:
+
+CRITICAL AREAS TO TEST:
+1. MongoDB Integration: signup/login with MongoDB persistence, user data survives server restarts, CRUD operations
+2. Authentication System: signup → login → protected routes flow, cookie-based authentication persists, middleware authentication
+3. API Endpoints with MongoDB: /api/auth/me, /api/users/{username}, /api/settings/*, /api/upload/avatar, /api/roommates
+4. Settings & Profile Management: privacy settings (roommateOptIn) default to true and can be toggled, profile data updates persist
+5. Data Persistence: create test account → verify in MongoDB, update user settings → verify changes persist, data survives server restarts
 """
 
 import requests
