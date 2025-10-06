@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function GET(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -37,14 +37,16 @@ export async function GET(request) {
     }
 
     // Get all users who have opted into roommate search
-    const allUsers = sharedStorage.getAllUsers()
+    const allUsers = await mongoUserRepo.getAllUsers()
     const roommateUsers = allUsers.filter(u => 
       u.id !== user.id && // Don't include the current user
       u.roommateOptIn && // Only include users who opted in
       u.city // Only include users who have a location
     )
 
-    // Return mock roommate data for now
+    console.log('MongoDB: Found', roommateUsers.length, 'roommate candidates for user:', user.email)
+
+    // Return roommate data
     const roommates = roommateUsers.map(u => ({
       id: u.id,
       displayName: u.displayName,
@@ -70,7 +72,7 @@ export async function GET(request) {
     })
     
   } catch (error) {
-    console.error('Get roommates error:', error)
+    console.error('MongoDB: Get roommates error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

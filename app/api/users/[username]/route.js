@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 export async function GET(request, { params }) {
   try {
@@ -14,20 +14,20 @@ export async function GET(request, { params }) {
       )
     }
 
-    console.log('Looking up user by username:', username)
+    console.log('MongoDB: Looking up user by username:', username)
     
     // Get user by username
-    const user = sharedStorage.getUserByUsername(username.toLowerCase())
+    const user = await mongoUserRepo.getUserByUsername(username)
     
     if (!user) {
-      console.log('User not found for username:', username)
+      console.log('MongoDB: User not found for username:', username)
       return NextResponse.json(
         { error: "User not found" }, 
         { status: 404 }
       )
     }
 
-    console.log('User found:', user.email)
+    console.log('MongoDB: User found:', user.email)
 
     // Return user profile data (without password)
     const { passwordHash: _, ...userProfile } = user
@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(profileData)
     
   } catch (error) {
-    console.error('Get user profile error:', error)
+    console.error('MongoDB: Get user profile error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

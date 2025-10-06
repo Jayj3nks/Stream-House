@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function PUT(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -38,14 +38,14 @@ export async function PUT(request) {
 
     const { appearInRoommateSearch } = await request.json()
     
-    console.log('Updating roommate search visibility for user:', user.email, 'to:', appearInRoommateSearch)
+    console.log('MongoDB: Updating roommate search visibility for user:', user.email, 'to:', appearInRoommateSearch)
 
     // Update the user's roommate opt-in setting
-    const success = sharedStorage.updateUser(user.id, {
+    const updatedUser = await mongoUserRepo.updateUser(user.id, {
       roommateOptIn: Boolean(appearInRoommateSearch)
     })
     
-    if (!success) {
+    if (!updatedUser) {
       return NextResponse.json(
         { error: "Failed to update roommate search setting" },
         { status: 500 }
@@ -59,7 +59,7 @@ export async function PUT(request) {
     })
     
   } catch (error) {
-    console.error('Update roommate search error:', error)
+    console.error('MongoDB: Update roommate search error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

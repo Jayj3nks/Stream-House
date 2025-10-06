@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function POST(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -61,23 +61,22 @@ export async function POST(request) {
       )
     }
 
-    // For now, just create a mock avatar URL
-    // In production, you would upload to cloud storage
+    // For now, just create a avatar URL using dicebear
     const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=b6e3f4,c0aede,d1d4f9`
     
     // Update user with new avatar URL
-    const success = sharedStorage.updateUser(user.id, {
+    const updatedUser = await mongoUserRepo.updateUser(user.id, {
       avatarUrl: avatarUrl
     })
     
-    if (!success) {
+    if (!updatedUser) {
       return NextResponse.json(
         { error: "Failed to update avatar" },
         { status: 500 }
       )
     }
 
-    console.log('Avatar updated for user:', user.email)
+    console.log('MongoDB: Avatar updated for user:', user.email)
 
     return NextResponse.json({
       success: true,
@@ -86,7 +85,7 @@ export async function POST(request) {
     })
     
   } catch (error) {
-    console.error('Avatar upload error:', error)
+    console.error('MongoDB: Avatar upload error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

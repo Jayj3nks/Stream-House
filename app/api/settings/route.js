@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function PUT(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -38,7 +38,7 @@ export async function PUT(request) {
 
     const updates = await request.json()
     
-    console.log('Updating user settings:', updates)
+    console.log('MongoDB: Updating user settings:', updates)
 
     // Validate that at least one field is being updated
     const allowedFields = ['displayName', 'email', 'bio', 'city', 'timeZone', 'platforms', 'niches', 'games', 'roommateOptIn']
@@ -52,17 +52,15 @@ export async function PUT(request) {
     }
 
     // Update the user
-    const success = sharedStorage.updateUser(user.id, updates)
+    const updatedUser = await mongoUserRepo.updateUser(user.id, updates)
     
-    if (!success) {
+    if (!updatedUser) {
       return NextResponse.json(
         { error: "Failed to update user" },
         { status: 500 }
       )
     }
 
-    // Get updated user data
-    const updatedUser = sharedStorage.getUserById(user.id)
     const { passwordHash: _, ...userWithoutPassword } = updatedUser
 
     return NextResponse.json({
@@ -72,7 +70,7 @@ export async function PUT(request) {
     })
     
   } catch (error) {
-    console.error('Update settings error:', error)
+    console.error('MongoDB: Update settings error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }
