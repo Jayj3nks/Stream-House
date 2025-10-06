@@ -348,7 +348,7 @@ backend:
   - task: "Cookie-based Authentication System"
     implemented: true
     working: true
-    file: "/app/app/api/[[...path]]/route.js"
+    file: "/app/app/api/auth/signup/route.js, /app/app/api/auth/login/route.js, /app/app/api/auth/me/route.js, /app/app/actions/signup.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -356,6 +356,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE TESTING COMPLETED - Cookie-based authentication system working perfectly. POST /api/auth/signup sets HttpOnly cookies with complete profile data, POST /api/auth/login sets HttpOnly cookies, GET /api/auth/me works with cookie authentication, POST /api/auth/logout properly clears cookies. All authentication flows tested and working correctly."
+        - working: true
+          agent: "testing"
+          comment: "✅ AUTHENTICATION FIXES VERIFICATION COMPLETED - Comprehensive testing of updated cookie-based authentication system as requested in review. RESULTS: 7/7 tests passed (100% success rate). ✅ VERIFIED WORKING: 1) Updated signup flow with consistent cookie settings (HttpOnly, SameSite=Lax, domain=undefined), 2) Updated login API with consistent cookie settings, 3) /api/auth/me works perfectly with cookie authentication, 4) Protected routes (/roommates, /users/me/houses) accept cookie authentication, 5) Middleware correctly rejects requests without cookies and accepts valid cookies, 6) Complete signup->login->protected route flow working, 7) Cookie persistence across requests verified. ✅ BROWSER TESTING: Login flow successfully redirects to dashboard, cookie authentication working in browser context, protected route access confirmed. All recent authentication fixes are working correctly."
 
   - task: "Profile Update API with Validation"
     implemented: true
