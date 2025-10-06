@@ -759,6 +759,18 @@ frontend:
           agent: "testing"
           comment: "✅ PASSED: Main page responsive on mobile with accessible login form and Streamer House branding. Key UI elements properly sized for mobile viewport (390x844)."
 
+  - task: "User Profile Data Display Integration"
+    implemented: false
+    working: false
+    file: "/app/app/dashboard/page.js, /app/app/signup/page.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE DISCOVERED - User display name from signup form not showing correctly in dashboard. After successful signup with specific display name (e.g., 'Test User 1759715217'), dashboard shows generic 'Creator User' instead of actual user data. This indicates a disconnect between signup data storage and dashboard data retrieval. Signup API returns success and authentication works, but user profile data is not properly integrated into the dashboard display."
+
   - task: "Streamer House Branding"
     implemented: true
     working: true
