@@ -770,9 +770,9 @@ frontend:
 
   - task: "User Profile Data Display Integration"
     implemented: true
-    working: true
+    working: false
     file: "/app/app/api/auth/me/route.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -782,6 +782,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE USER PROFILE DATA DISPLAY TESTING COMPLETED - /api/auth/me endpoint working perfectly for user profile data display. Tested: 1) Returns correct user data after signup (ID, displayName, username, email), 2) Display name matches signup data exactly (not 'Creator User'), 3) All extended profile fields returned (platforms, niches, city, roommateOptIn), 4) Authentication via JWT cookies working correctly, 5) User profile data properly stored and retrieved from shared storage. The 'Creator User' issue has been resolved - actual user display names are now returned correctly."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL FRONTEND INTEGRATION ISSUE CONFIRMED - Backend API /api/auth/me working perfectly and returns correct user data (Test User 1759716286), but frontend dashboard page shows 'Streamer House' instead of user displayName. ROOT CAUSE: Middleware not recognizing authentication cookies, causing redirects to login page instead of showing authenticated dashboard content. Frontend pages not calling authentication APIs due to middleware interference."
 
   - task: "Streamer House Branding"
     implemented: true
