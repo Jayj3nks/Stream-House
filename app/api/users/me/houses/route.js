@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function GET(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -35,6 +35,8 @@ export async function GET(request) {
         { status: 401 }
       )
     }
+
+    console.log('MongoDB: Getting houses for user:', user.email)
 
     // For now, return empty array as houses aren't implemented yet
     // In the future, this would query the houses the user belongs to
@@ -44,7 +46,7 @@ export async function GET(request) {
     })
     
   } catch (error) {
-    console.error('Get user houses error:', error)
+    console.error('MongoDB: Get user houses error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }

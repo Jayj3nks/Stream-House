@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { sharedStorage } from '../../../../lib/storage/shared.js'
+import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -27,7 +27,7 @@ export async function POST(request) {
       )
     }
 
-    const user = sharedStorage.getUserById(decoded.userId)
+    const user = await mongoUserRepo.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
@@ -71,7 +71,7 @@ export async function POST(request) {
 
     // In a real app, we would save this to the database
     // For now, we'll just return the house data
-    console.log('Created house:', house.name, 'for user:', user.email)
+    console.log('MongoDB: Created house:', house.name, 'for user:', user.email)
 
     return NextResponse.json({
       success: true,
@@ -80,7 +80,7 @@ export async function POST(request) {
     })
     
   } catch (error) {
-    console.error('Create house error:', error)
+    console.error('MongoDB: Create house error:', error)
     return NextResponse.json(
       { error: "Internal server error" }, 
       { status: 500 }
