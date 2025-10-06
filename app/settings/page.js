@@ -119,11 +119,9 @@ export default function SettingsPage() {
       const formData = new FormData()
       formData.append('avatar', file)
 
-      const response = await fetch('/api/media/upload', {
+      const response = await fetch('/api/upload/avatar', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
+        credentials: 'include', // Use cookie-based auth instead of bearer token
         body: formData
       })
 
