@@ -591,6 +591,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ NAVIGATION ISSUE AFTER BACKEND FIXES - Settings page not loading properly via navigation buttons from main app header. Direct URL navigation to /settings may work but header navigation buttons have issues. Authentication is working but navigation to settings page is problematic."
+        - working: false
+          agent: "testing"
+          comment: "❌ PARTIAL FUNCTIONALITY - Settings page accessible with all tabs (Profile, Account, Security, Privacy) working. UI elements present for username/email/password changes. CRITICAL ISSUE: Privacy settings roommate search toggle fails to save state due to 404 error from /api/settings/roommate-search endpoint. Backend API integration broken for settings functionality."
 
 metadata:
   created_by: "testing_agent"
