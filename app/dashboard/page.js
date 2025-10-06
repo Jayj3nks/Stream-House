@@ -19,15 +19,35 @@ export default function Dashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    // Load user data without API calls to avoid 502 issues
-    setUser({
-      id: 'user-id',
-      email: 'user@example.com',
-      displayName: 'Creator User',
-      platforms: ['TikTok', 'YouTube'],
-      niches: ['Gaming']
-    })
-    setHouses([]) // Start with empty houses
+    // Load actual user data from authentication API
+    const loadUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const userData = await response.json()
+          console.log('Dashboard: Loaded user data:', userData)
+          setUser(userData)
+        } else {
+          console.error('Dashboard: Failed to load user data')
+          // Redirect to login if not authenticated
+          router.push('/')
+          return
+        }
+      } catch (error) {
+        console.error('Dashboard: Error loading user data:', error)
+        router.push('/')
+        return
+      }
+      
+      // Load houses (keeping as empty for now)
+      setHouses([])
+      setLoading(false)
+    }
+    
+    loadUserData()
     
     // Load mock chat messages
     setMessages([
