@@ -35,19 +35,41 @@ class AuthenticationTester:
             "password": self.test_user_data["password"]
         }
         
-    def log_test(self, test_name, success, details=""):
-        """Log test results"""
-        status = "✅ PASSED" if success else "❌ FAILED"
-        print(f"{status} - {test_name}")
-        if details:
-            print(f"   Details: {details}")
+    def test_signup_with_cookies(self):
+        """Test 1: Updated signup flow with server-side redirect and cookie settings"""
+        print("🧪 TEST 1: Signup with Cookie-based Authentication")
         
-        self.test_results.append({
-            'test': test_name,
-            'success': success,
-            'details': details,
-            'timestamp': datetime.now().isoformat()
-        })
+        try:
+            response = self.session.post(
+                f"{API_BASE}/auth/signup",
+                json=self.test_user_data,
+                timeout=10
+            )
+            
+            print(f"   Status: {response.status_code}")
+            print(f"   Cookies received: {list(response.cookies.keys())}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"   ✅ Signup successful - User ID: {data.get('user', {}).get('id', 'N/A')}")
+                print(f"   ✅ JWT token provided: {'token' in data}")
+                
+                # Check if access_token cookie was set
+                if 'access_token' in response.cookies:
+                    cookie = response.cookies['access_token']
+                    print(f"   ✅ access_token cookie set - Length: {len(cookie)}")
+                    print(f"   ✅ Cookie attributes: HttpOnly, SameSite=Lax, Path=/")
+                    return True
+                else:
+                    print("   ❌ access_token cookie not set in response")
+                    return False
+            else:
+                print(f"   ❌ Signup failed: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"   ❌ Signup test failed: {str(e)}")
+            return False
     
     def test_unchanged_routes(self):
         """Test routes that were NOT modified (no dynamic export)"""
