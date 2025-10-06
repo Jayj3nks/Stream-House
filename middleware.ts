@@ -17,11 +17,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get the access token from cookies
+  // Get the access token from cookies with more detailed logging
+  const allCookies = request.cookies.getAll();
   const token = request.cookies.get("access_token")?.value;
+  
+  console.log('Middleware: Path:', pathname);
+  console.log('Middleware: All cookies:', allCookies.map(c => `${c.name}=${c.value.substring(0, 20)}...`));
+  console.log('Middleware: Access token found:', !!token, token ? `Length: ${token.length}` : 'None');
 
   if (!token) {
-    console.log('Middleware: No token found for', pathname);
+    console.log('Middleware: No token found, redirecting to login');
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('next', pathname);
@@ -31,10 +36,10 @@ export function middleware(request: NextRequest) {
   // Simple token presence check (avoid JWT verification in edge runtime)
   // The actual validation will be done by individual pages
   if (token && token.length > 10) {
-    console.log('Middleware: Token present, allowing access to', pathname);
+    console.log('Middleware: Token valid, allowing access to', pathname);
     return NextResponse.next();
   } else {
-    console.log('Middleware: Invalid token format for', pathname);
+    console.log('Middleware: Invalid token format, redirecting to login');
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('next', pathname);
