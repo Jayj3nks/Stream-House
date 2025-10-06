@@ -71,328 +71,249 @@ class StreamHouseAPITester:
             print(f"❌ SIGNUP ERROR: {str(e)}")
             return False
 
-    def test_login_api_endpoint(self):
-        """Test 2: Login flow using /api/auth/login"""
+    def test_auth_me_endpoint(self):
+        """Test /api/auth/me endpoint to verify user data display"""
+        print("\n🧪 Testing /api/auth/me endpoint for user profile data...")
+        
         try:
-            login_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password
-            }
-            
-            response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
+            response = self.session.get(f"{API_BASE}/auth/me", timeout=10)
+            print(f"Auth/me Response Status: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
-                if 'token' in data and 'user' in data:
-                    # Check if cookie was set
-                    cookies = response.cookies
-                    has_auth_cookie = 'access_token' in cookies
-                    
-                    self.log_test(
-                        "Login API Endpoint", 
-                        True, 
-                        f"Login successful. Token: {len(data['token'])} chars, Cookie set: {has_auth_cookie}"
-                    )
-                    return True, data
-                else:
-                    self.log_test("Login API Endpoint", False, f"Missing token or user in response: {data}")
-                    return False, None
-            else:
-                self.log_test("Login API Endpoint", False, f"Status: {response.status_code}, Response: {response.text}")
-                return False, None
+                print(f"✅ AUTH/ME SUCCESS")
+                print(f"✅ User ID: {data.get('id')}")
+                print(f"✅ Display Name: {data.get('displayName')}")
+                print(f"✅ Username: {data.get('username')}")
+                print(f"✅ Email: {data.get('email')}")
+                print(f"✅ Platforms: {data.get('platforms', [])}")
+                print(f"✅ Niches: {data.get('niches', [])}")
+                print(f"✅ City: {data.get('city')}")
+                print(f"✅ Roommate Opt-in: {data.get('roommateOptIn')}")
                 
-        except Exception as e:
-            self.log_test("Login API Endpoint", False, f"Exception: {str(e)}")
-            return False, None
-
-    def test_cookie_persistence_signup(self):
-        """Test 3: Cookie persistence works across signup"""
-        try:
-            # First, clear any existing cookies
-            self.session.cookies.clear()
-            
-            # Create a new user with signup
-            signup_data = {
-                "email": f"cookietest{int(time.time())}@example.com",
-                "password": "testpassword123",
-                "displayName": "Cookie Test User",
-                "platforms": ["TikTok"],
-                "niches": ["Gaming"],
-                "city": "New York"
-            }
-            
-            signup_response = self.session.post(f"{API_BASE}/auth/signup", json=signup_data)
-            
-            if signup_response.status_code != 200:
-                self.log_test("Cookie Persistence (Signup)", False, f"Signup failed: {signup_response.status_code}")
-                return False
-            
-            # Now test if the cookie persists by calling /auth/me
-            me_response = self.session.get(f"{API_BASE}/auth/me")
-            
-            if me_response.status_code == 200:
-                user_data = me_response.json()
-                if 'email' in user_data and user_data['email'] == signup_data['email']:
-                    self.log_test(
-                        "Cookie Persistence (Signup)", 
-                        True, 
-                        f"Cookie persisted after signup. User: {user_data['displayName']}"
-                    )
+                # Check if displayName is correct (not "Creator User")
+                if data.get('displayName') == self.test_user_data['displayName']:
+                    print("✅ VERIFIED: Display name matches signup data (not 'Creator User')")
                     return True
                 else:
-                    self.log_test("Cookie Persistence (Signup)", False, f"Wrong user data returned: {user_data}")
+                    print(f"❌ ISSUE: Display name mismatch. Expected: {self.test_user_data['displayName']}, Got: {data.get('displayName')}")
                     return False
             else:
-                self.log_test("Cookie Persistence (Signup)", False, f"/auth/me failed: {me_response.status_code}, {me_response.text}")
+                print(f"❌ AUTH/ME FAILED: {response.text}")
                 return False
                 
         except Exception as e:
-            self.log_test("Cookie Persistence (Signup)", False, f"Exception: {str(e)}")
+            print(f"❌ AUTH/ME ERROR: {str(e)}")
             return False
 
-    def test_cookie_persistence_login(self):
-        """Test 4: Cookie persistence works across login"""
+    def test_profile_api_integration(self):
+        """Test /api/users/{username} endpoint with actual username"""
+        print(f"\n🧪 Testing Profile API Integration: /api/users/{self.created_username}...")
+        
+        if not self.created_username:
+            print("❌ No username available for testing")
+            return False
+            
         try:
-            # Clear cookies and login with existing user
-            self.session.cookies.clear()
+            response = self.session.get(f"{API_BASE}/users/{self.created_username}", timeout=10)
+            print(f"Profile API Response Status: {response.status_code}")
             
-            login_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password
-            }
-            
-            login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-            
-            if login_response.status_code != 200:
-                self.log_test("Cookie Persistence (Login)", False, f"Login failed: {login_response.status_code}")
-                return False
-            
-            # Test if cookie persists by calling /auth/me
-            me_response = self.session.get(f"{API_BASE}/auth/me")
-            
-            if me_response.status_code == 200:
-                user_data = me_response.json()
-                if 'email' in user_data and user_data['email'] == self.test_user_email:
-                    self.log_test(
-                        "Cookie Persistence (Login)", 
-                        True, 
-                        f"Cookie persisted after login. User: {user_data['displayName']}"
-                    )
+            if response.status_code == 200:
+                data = response.json()
+                print(f"✅ PROFILE API SUCCESS")
+                print(f"✅ User ID: {data.get('id')}")
+                print(f"✅ Display Name: {data.get('displayName')}")
+                print(f"✅ Username: {data.get('username')}")
+                print(f"✅ Email: {data.get('email')}")
+                print(f"✅ Platforms: {data.get('platforms', [])}")
+                print(f"✅ Stats: {data.get('stats', {})}")
+                print(f"✅ Posts: {len(data.get('posts', []))} posts")
+                print(f"✅ Clips: {len(data.get('clips', []))} clips")
+                
+                # Verify actual user data is returned
+                if data.get('displayName') == self.test_user_data['displayName']:
+                    print("✅ VERIFIED: Profile returns correct user data")
                     return True
                 else:
-                    self.log_test("Cookie Persistence (Login)", False, f"Wrong user data returned: {user_data}")
+                    print(f"❌ ISSUE: Profile data mismatch")
                     return False
             else:
-                self.log_test("Cookie Persistence (Login)", False, f"/auth/me failed: {me_response.status_code}, {me_response.text}")
+                print(f"❌ PROFILE API FAILED: {response.text}")
                 return False
                 
         except Exception as e:
-            self.log_test("Cookie Persistence (Login)", False, f"Exception: {str(e)}")
+            print(f"❌ PROFILE API ERROR: {str(e)}")
             return False
 
-    def test_middleware_authentication(self):
-        """Test 5: Middleware properly recognizes authentication cookies"""
+    def test_settings_roommate_search_api(self):
+        """Test /api/settings/roommate-search privacy toggle"""
+        print("\n🧪 Testing Settings API Integration: /api/settings/roommate-search...")
+        
         try:
-            # Ensure we're logged in
-            login_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password
-            }
+            # Test turning privacy OFF
+            response = self.session.put(
+                f"{API_BASE}/settings/roommate-search",
+                json={"appearInRoommateSearch": False},
+                timeout=10
+            )
+            print(f"Privacy Toggle OFF Response Status: {response.status_code}")
             
-            login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-            
-            if login_response.status_code != 200:
-                self.log_test("Middleware Authentication", False, f"Login failed: {login_response.status_code}")
-                return False
-            
-            # Test /auth/me endpoint which should work with cookies
-            me_response = self.session.get(f"{API_BASE}/auth/me")
-            
-            if me_response.status_code == 200:
-                user_data = me_response.json()
-                if 'id' in user_data and 'email' in user_data:
-                    self.log_test(
-                        "Middleware Authentication", 
-                        True, 
-                        f"Middleware correctly recognized auth cookie. User ID: {user_data['id']}"
-                    )
-                    return True
-                else:
-                    self.log_test("Middleware Authentication", False, f"Invalid user data structure: {user_data}")
-                    return False
-            else:
-                self.log_test("Middleware Authentication", False, f"/auth/me failed: {me_response.status_code}, {me_response.text}")
-                return False
+            if response.status_code == 200:
+                data = response.json()
+                print(f"✅ PRIVACY TOGGLE OFF SUCCESS")
+                print(f"✅ Success: {data.get('success')}")
+                print(f"✅ Appear in Search: {data.get('appearInRoommateSearch')}")
+                print(f"✅ Message: {data.get('message')}")
                 
-        except Exception as e:
-            self.log_test("Middleware Authentication", False, f"Exception: {str(e)}")
-            return False
-
-    def test_protected_routes_with_cookies(self):
-        """Test 6: Protected routes work with authentication cookies"""
-        try:
-            # Ensure we're logged in
-            login_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password
-            }
-            
-            login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-            
-            if login_response.status_code != 200:
-                self.log_test("Protected Routes with Cookies", False, f"Login failed: {login_response.status_code}")
-                return False
-            
-            # Test protected route: /api/roommates
-            roommates_response = self.session.get(f"{API_BASE}/roommates")
-            
-            if roommates_response.status_code == 200:
-                roommates_data = roommates_response.json()
-                if 'roommates' in roommates_data:
-                    self.log_test(
-                        "Protected Routes with Cookies", 
-                        True, 
-                        f"Protected route /roommates accessible. Found {len(roommates_data['roommates'])} roommates"
-                    )
-                    return True
-                else:
-                    self.log_test("Protected Routes with Cookies", False, f"Invalid roommates data structure: {roommates_data}")
-                    return False
-            else:
-                self.log_test("Protected Routes with Cookies", False, f"/roommates failed: {roommates_response.status_code}, {roommates_response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_test("Protected Routes with Cookies", False, f"Exception: {str(e)}")
-            return False
-
-    def test_unauthenticated_access_blocked(self):
-        """Test 7: Unauthenticated access is properly blocked"""
-        try:
-            # Clear all cookies to simulate unauthenticated user
-            self.session.cookies.clear()
-            
-            # Test that protected routes return 401
-            roommates_response = self.session.get(f"{API_BASE}/roommates")
-            
-            if roommates_response.status_code == 401:
-                self.log_test(
-                    "Unauthenticated Access Blocked", 
-                    True, 
-                    f"Protected route correctly returned 401 for unauthenticated user"
+                # Test turning privacy ON
+                response2 = self.session.put(
+                    f"{API_BASE}/settings/roommate-search",
+                    json={"appearInRoommateSearch": True},
+                    timeout=10
                 )
-                return True
-            else:
-                self.log_test("Unauthenticated Access Blocked", False, f"Expected 401, got: {roommates_response.status_code}")
-                return False
+                print(f"Privacy Toggle ON Response Status: {response2.status_code}")
                 
-        except Exception as e:
-            self.log_test("Unauthenticated Access Blocked", False, f"Exception: {str(e)}")
-            return False
-
-    def test_logout_functionality(self):
-        """Test 8: Logout properly clears cookies"""
-        try:
-            # Login first
-            login_data = {
-                "email": self.test_user_email,
-                "password": self.test_user_password
-            }
-            
-            login_response = self.session.post(f"{API_BASE}/auth/login", json=login_data)
-            
-            if login_response.status_code != 200:
-                self.log_test("Logout Functionality", False, f"Login failed: {login_response.status_code}")
-                return False
-            
-            # Verify we're logged in
-            me_response = self.session.get(f"{API_BASE}/auth/me")
-            if me_response.status_code != 200:
-                self.log_test("Logout Functionality", False, f"Not properly logged in before logout test")
-                return False
-            
-            # Logout
-            logout_response = self.session.post(f"{API_BASE}/auth/logout")
-            
-            if logout_response.status_code == 200:
-                # Test that we're now logged out
-                me_response_after = self.session.get(f"{API_BASE}/auth/me")
-                
-                if me_response_after.status_code == 401:
-                    self.log_test(
-                        "Logout Functionality", 
-                        True, 
-                        f"Logout successful. /auth/me now returns 401 as expected"
-                    )
-                    return True
+                if response2.status_code == 200:
+                    data2 = response2.json()
+                    print(f"✅ PRIVACY TOGGLE ON SUCCESS")
+                    print(f"✅ Appear in Search: {data2.get('appearInRoommateSearch')}")
+                    
+                    # Verify default setting (should be ON for new users)
+                    if data2.get('appearInRoommateSearch') == True:
+                        print("✅ VERIFIED: Privacy settings working correctly")
+                        return True
+                    else:
+                        print("❌ ISSUE: Privacy toggle not working correctly")
+                        return False
                 else:
-                    self.log_test("Logout Functionality", False, f"Still authenticated after logout: {me_response_after.status_code}")
+                    print(f"❌ PRIVACY TOGGLE ON FAILED: {response2.text}")
                     return False
             else:
-                self.log_test("Logout Functionality", False, f"Logout failed: {logout_response.status_code}, {logout_response.text}")
+                print(f"❌ PRIVACY TOGGLE OFF FAILED: {response.text}")
                 return False
                 
         except Exception as e:
-            self.log_test("Logout Functionality", False, f"Exception: {str(e)}")
+            print(f"❌ SETTINGS API ERROR: {str(e)}")
             return False
 
-    def run_all_tests(self):
-        """Run all authentication tests"""
-        print("🔐 STREAM HOUSE AUTHENTICATION SYSTEM TESTING")
-        print("=" * 60)
-        print(f"Testing against: {BASE_URL}")
-        print(f"Test user email: {self.test_user_email}")
-        print()
+    def test_avatar_upload_api(self):
+        """Test /api/upload/avatar profile picture functionality"""
+        print("\n🧪 Testing Profile Picture Upload: /api/upload/avatar...")
         
-        # Run tests in sequence
-        tests = [
-            self.test_signup_api_endpoint,
-            self.test_login_api_endpoint,
-            self.test_cookie_persistence_signup,
-            self.test_cookie_persistence_login,
-            self.test_middleware_authentication,
-            self.test_protected_routes_with_cookies,
-            self.test_unauthenticated_access_blocked,
-            self.test_logout_functionality
-        ]
-        
-        for test in tests:
-            try:
-                test()
-            except Exception as e:
-                print(f"❌ FAILED: {test.__name__} - Exception: {str(e)}")
+        try:
+            # Create a mock image file for testing
+            mock_image_data = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\nIDATx\x9cc\xf8\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00IEND\xaeB`\x82'
             
-            # Small delay between tests
-            time.sleep(0.5)
+            files = {
+                'avatar': ('test_avatar.png', BytesIO(mock_image_data), 'image/png')
+            }
+            
+            response = self.session.post(
+                f"{API_BASE}/upload/avatar",
+                files=files,
+                timeout=10
+            )
+            print(f"Avatar Upload Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"✅ AVATAR UPLOAD SUCCESS")
+                print(f"✅ Success: {data.get('success')}")
+                print(f"✅ Avatar URL: {data.get('avatarUrl')}")
+                print(f"✅ Message: {data.get('message')}")
+                
+                # Verify avatar URL is generated
+                if data.get('avatarUrl') and 'dicebear.com' in data.get('avatarUrl'):
+                    print("✅ VERIFIED: Avatar URL generated correctly")
+                    return True
+                else:
+                    print("❌ ISSUE: Avatar URL not generated properly")
+                    return False
+            else:
+                print(f"❌ AVATAR UPLOAD FAILED: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ AVATAR UPLOAD ERROR: {str(e)}")
+            return False
+
+    def test_privacy_default_for_new_users(self):
+        """Test that privacy settings default to ON (roommateOptIn: true) for new users"""
+        print("\n🧪 Testing Privacy Settings Default for New Users...")
         
-        # Print summary
-        print("\n" + "=" * 60)
-        print("🎯 AUTHENTICATION TESTING SUMMARY")
-        print("=" * 60)
+        try:
+            # Check current user's privacy setting via auth/me
+            response = self.session.get(f"{API_BASE}/auth/me", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                roommate_opt_in = data.get('roommateOptIn')
+                print(f"✅ Current roommateOptIn setting: {roommate_opt_in}")
+                
+                if roommate_opt_in == True:
+                    print("✅ VERIFIED: Privacy settings default to ON for new users")
+                    return True
+                else:
+                    print("❌ ISSUE: Privacy settings not defaulting to ON for new users")
+                    return False
+            else:
+                print(f"❌ Failed to check privacy default: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ PRIVACY DEFAULT CHECK ERROR: {str(e)}")
+            return False
+
+    def run_comprehensive_test(self):
+        """Run all tests in sequence"""
+        print("🏠 STREAM HOUSE BACKEND API TESTING - Profile Integration Fix Verification")
+        print("=" * 80)
         
-        passed = sum(1 for result in self.test_results if result['success'])
-        total = len(self.test_results)
-        success_rate = (passed / total * 100) if total > 0 else 0
+        results = {}
         
-        print(f"Tests passed: {passed}/{total} ({success_rate:.1f}%)")
-        print()
+        # Test 1: Signup and get username
+        results['signup'] = self.test_signup_and_get_username()
         
-        for result in self.test_results:
-            print(f"{result['status']}: {result['test']}")
-            if result['details']:
-                print(f"   {result['details']}")
+        if not results['signup']:
+            print("\n❌ CRITICAL: Cannot proceed with testing - signup failed")
+            return results
         
-        print("\n" + "=" * 60)
+        # Test 2: Auth/me endpoint for user profile data
+        results['auth_me'] = self.test_auth_me_endpoint()
         
-        if success_rate >= 85:
-            print("🎉 AUTHENTICATION SYSTEM: WORKING CORRECTLY")
-        elif success_rate >= 70:
-            print("⚠️  AUTHENTICATION SYSTEM: MOSTLY WORKING (Minor Issues)")
+        # Test 3: Profile API integration with actual username
+        results['profile_api'] = self.test_profile_api_integration()
+        
+        # Test 4: Settings API for privacy toggle
+        results['settings_api'] = self.test_settings_roommate_search_api()
+        
+        # Test 5: Avatar upload functionality
+        results['avatar_upload'] = self.test_avatar_upload_api()
+        
+        # Test 6: Privacy default setting
+        results['privacy_default'] = self.test_privacy_default_for_new_users()
+        
+        # Summary
+        print("\n" + "=" * 80)
+        print("🎯 TEST RESULTS SUMMARY")
+        print("=" * 80)
+        
+        passed = sum(1 for result in results.values() if result)
+        total = len(results)
+        
+        for test_name, result in results.items():
+            status = "✅ PASSED" if result else "❌ FAILED"
+            print(f"{test_name.upper().replace('_', ' ')}: {status}")
+        
+        print(f"\nOVERALL: {passed}/{total} tests passed ({passed/total*100:.1f}% success rate)")
+        
+        if passed == total:
+            print("🎉 ALL TESTS PASSED - Profile API integration fixes verified!")
         else:
-            print("❌ AUTHENTICATION SYSTEM: CRITICAL ISSUES FOUND")
+            print("⚠️  Some tests failed - issues need attention")
         
-        return success_rate, self.test_results
+        return results
 
 if __name__ == "__main__":
-    tester = AuthenticationTester()
-    success_rate, results = tester.run_all_tests()
+    tester = StreamHouseAPITester()
+    results = tester.run_comprehensive_test()
