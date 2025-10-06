@@ -46,13 +46,17 @@ export async function POST(request) {
       user: userWithoutPassword 
     })
     
+    // Use consistent cookie settings across all auth endpoints
     response.cookies.set("access_token", token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: false, // Disable for testing
+      secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      domain: undefined // Let browser set the correct domain
     })
+    
+    console.log('API: Cookie set for login, token length:', token.length)
     
     return response
     

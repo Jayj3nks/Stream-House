@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { sharedStorage } from '../../lib/storage/shared.js'
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -82,7 +83,7 @@ export async function createAccount(formData) {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' })
     
     console.log('Server action: Setting authentication cookie...')
-    // Set cookie using Next.js server action
+    // Set cookie using Next.js server action with consistent settings
     const cookieStore = cookies()
     cookieStore.set("access_token", token, {
       httpOnly: true,
@@ -94,18 +95,11 @@ export async function createAccount(formData) {
     
     // Verify the cookie was set by trying to read it back
     const setCookie = cookieStore.get("access_token")
-    console.log('Server action: Cookie set result:', !!setCookie?.value)
+    console.log('Server action: Cookie set result:', !!setCookie?.value, 'token length:', token.length)
     
-    console.log('Server action: Returning success with redirect instruction')
-    
-    // Return success with user data and redirect instruction
-    const { passwordHash: _, ...userWithoutPassword } = user
-    return { 
-      success: true, 
-      user: userWithoutPassword,
-      redirect: '/dashboard',
-      authenticated: true
-    }
+    // Instead of returning data for client-side redirect, do server-side redirect
+    console.log('Server action: Performing server-side redirect to dashboard')
+    redirect('/dashboard')
     
   } catch (error) {
     console.error('Server action: Signup error:', error)
