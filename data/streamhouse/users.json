@@ -1,0 +1,30 @@
+{
+  "fdf370db-b7e5-48c3-b588-61979eedb4db": {
+    "id": "fdf370db-b7e5-48c3-b588-61979eedb4db",
+    "email": "testpersist@example.com",
+    "passwordHash": "$2a$12$mKtmns3zhx1kAFubYJRbL.9rdyON7GvDCH6xacQabxdPn9SngHqtm",
+    "displayName": "Test Persistent User",
+    "username": "testpersistentuser",
+    "platforms": [
+      "TikTok"
+    ],
+    "niches": [
+      "Gaming"
+    ],
+    "games": [],
+    "city": "Los Angeles",
+    "timeZone": "America/Los_Angeles",
+    "hasSchedule": false,
+    "schedule": {},
+    "bio": "",
+    "createdAt": "2025-10-06T14:57:41.027Z",
+    "avatarUrl": null,
+    "totalPoints": 0,
+    "roommateOptIn": true,
+    "roommatePlatforms": [],
+    "roommateNiche": null,
+    "roommateTimezone": null,
+    "roommateRegion": null,
+    "roommateExperience": null
+  }
+}
