@@ -105,42 +105,49 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Call server action directly - this will redirect on success
-      await createAccount(formData)
-      
-      // If we reach here, there was an error (redirect() throws and doesn't return)
-      toast({
-        title: "Error",
-        description: "Something went wrong during signup. Please try again.",
-        variant: "destructive"
+      // Use API endpoint instead of server action for consistent cookie handling
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for cookie handling
+        body: JSON.stringify(formData)
       })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Signup successful:', data.user?.email)
+        
+        toast({
+          title: "Welcome to Streamer House!",
+          description: "Your account has been created successfully."
+        })
+        
+        // Wait a moment for cookie to be set, then redirect
+        setTimeout(() => {
+          console.log('Redirecting to dashboard...')
+          window.location.href = '/dashboard'
+        }, 1000)
+        
+      } else {
+        const errorData = await response.json()
+        console.error('Signup failed:', errorData.error)
+        toast({
+          title: "Signup Failed",
+          description: errorData.error || "Something went wrong",
+          variant: "destructive"
+        })
+        setLoading(false)
+      }
       
     } catch (error) {
-      // Check if this is a redirect error (which is expected)
-      if (error?.message?.includes('NEXT_REDIRECT')) {
-        console.log('Server action redirected successfully - this is expected')
-        // Don't show error for redirects, they are expected
-        return
-      }
-      
-      // Handle actual errors
       console.error('Signup error:', error)
-      
-      // If error has a message that looks like our validation errors, show it
-      if (error?.message && typeof error.message === 'string') {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive"
-        })
-      } else {
-        toast({
-          title: "Error",
-          description: "Something went wrong. Please try again.",
-          variant: "destructive"
-        })
-      }
-    } finally {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      })
       setLoading(false)
     }
   }
