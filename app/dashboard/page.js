@@ -73,9 +73,6 @@ export default function Dashboard() {
         userId: 'user-3'
       }
     ])
-    
-    setLoading(false)
-  }, [])
 
   const handleSendMessage = (e) => {
     e.preventDefault()
