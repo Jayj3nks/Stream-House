@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { userRepo } from '../../../../lib/repositories/memory/index.js'
+import { sharedStorage } from '../../../lib/storage/shared.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
 
@@ -18,7 +18,7 @@ export async function GET(request) {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET)
-    const user = await userRepo.getById(decoded.userId)
+    const user = sharedStorage.getUserById(decoded.userId)
     
     if (!user) {
       return NextResponse.json(
