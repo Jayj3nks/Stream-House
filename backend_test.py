@@ -37,21 +37,7 @@ class StreamHouseAPITester:
         }
         self.created_username = None
         
-    def log_test(self, test_name, success, details=""):
-        """Log test results"""
-        status = "✅ PASSED" if success else "❌ FAILED"
-        self.test_results.append({
-            'test': test_name,
-            'success': success,
-            'details': details,
-            'status': status
-        })
-        print(f"{status}: {test_name}")
-        if details:
-            print(f"   Details: {details}")
-        print()
-
-    def test_signup_api_endpoint(self):
+    def test_signup_and_get_username(self):
         """Test 1: Signup flow using /api/auth/signup API endpoint"""
         try:
             signup_data = {
