@@ -769,14 +769,15 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Dashboard Experience with Message Board"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
   authentication_system_verified: true
   cookie_authentication_working: true
   recent_fixes_confirmed: true
+  authentication_cleanup_verified: true
+  dashboard_experience_verified: true
 
 agent_communication:
     - agent: "testing"
