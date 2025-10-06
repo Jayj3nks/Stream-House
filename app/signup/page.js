@@ -105,51 +105,41 @@ export default function SignupPage() {
         description: "Please wait while we set up your account."
       })
       
-      // Call server action directly - this sets the authentication cookie
-      const result = await createAccount(formData)
+      // Call server action directly - this will redirect on success
+      await createAccount(formData)
       
-      if (result?.error) {
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive"
-        })
-      } else if (result?.success && result?.authenticated) {
-        toast({
-          title: "Welcome to Streamer House!",
-          description: "Your account has been created successfully."
-        })
-        
-        console.log('Account created successfully:', result.user)
-        console.log('Authentication cookie set, redirecting to dashboard...')
-        
-        // Server action already set the cookie, now redirect
-        // Use a shorter delay since cookie is already set
-        setTimeout(() => {
-          console.log('Redirecting to dashboard...')
-          window.location.href = '/dashboard'
-        }, 1000)
-        
-      } else {
-        console.log('Signup completed but authentication failed, redirecting to login')
-        toast({
-          title: "Account Created", 
-          description: "Please sign in with your new account.",
-          variant: "default"
-        })
-        
-        setTimeout(() => {
-          window.location.href = '/'
-        }, 2000)
-      }
-      
-    } catch (error) {
-      console.error('Signup error:', error)
+      // If we reach here, there was an error (redirect() throws and doesn't return)
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Something went wrong during signup. Please try again.",
         variant: "destructive"
       })
+      
+    } catch (error) {
+      // Check if this is a redirect error (which is expected)
+      if (error?.message?.includes('NEXT_REDIRECT')) {
+        console.log('Server action redirected successfully - this is expected')
+        // Don't show error for redirects, they are expected
+        return
+      }
+      
+      // Handle actual errors
+      console.error('Signup error:', error)
+      
+      // If error has a message that looks like our validation errors, show it
+      if (error?.message && typeof error.message === 'string') {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive"
+        })
+      }
     } finally {
       setLoading(false)
     }
