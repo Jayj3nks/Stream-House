@@ -21,10 +21,21 @@ API_BASE = f"{BASE_URL}/api"
 class StreamHouseAPITester:
     def __init__(self):
         self.session = requests.Session()
-        self.test_results = []
-        self.test_user_email = f"testuser{int(time.time())}@example.com"
-        self.test_user_password = "testpassword123"
-        self.test_user_display_name = "Test User Auth"
+        self.auth_token = None
+        self.test_user_data = {
+            "email": f"testuser{int(time.time())}@example.com",
+            "password": "testpassword123",
+            "displayName": f"Test User {int(time.time())}",
+            "platforms": ["TikTok", "YouTube"],
+            "niches": ["Gaming", "Tech"],
+            "games": ["Fortnite", "Minecraft"],
+            "city": "Los Angeles",
+            "timeZone": "America/Los_Angeles",
+            "hasSchedule": True,
+            "schedule": {"monday": "9-17", "tuesday": "9-17"},
+            "bio": "Test user for API testing"
+        }
+        self.created_username = None
         
     def log_test(self, test_name, success, details=""):
         """Log test results"""
