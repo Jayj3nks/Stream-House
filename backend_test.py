@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Stream-House Backend Authentication & Core API Testing
-Testing authentication persistence, data saving, and core endpoints
+Stream-House Backend API Testing Suite
+Testing API routes after adding 'export const dynamic = "force-dynamic";' to specific routes
 """
 
 import requests
@@ -12,11 +12,10 @@ import string
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://api-dynamic-fix.preview.emergentagent.com"
-API_BASE = f"{BASE_URL}/api"
+BASE_URL = "https://api-dynamic-fix.preview.emergentagent.com/api"
 TEST_USER_EMAIL = f"testuser{int(time.time())}@example.com"
 TEST_USER_PASSWORD = "testpassword123"
-TEST_USER_DISPLAY_NAME = "Test User"
+TEST_USER_DISPLAY_NAME = "Test User Dynamic"
 
 class StreamerHouseAPITester:
     def __init__(self):
