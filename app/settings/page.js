@@ -54,21 +54,34 @@ export default function SettingsPage() {
       setActiveTab(hash)
     }
 
-    // Skip API call to avoid 502 errors, set mock user data
-    setUser({
-      id: 'user-123',
-      email: 'user@example.com',
-      displayName: 'Creator User',
-      username: 'creatoruser',
-      platforms: ['TikTok', 'YouTube'],
-      niches: ['Gaming'],
-      city: 'Los Angeles, CA',
-      roommateOptIn: false
-    })
-    setUsernameForm({ currentPassword: '', newUsername: 'Creator User' })
-    setEmailForm({ currentPassword: '', newEmail: 'user@example.com' })
-    setAppearInRoommateSearch(false)
-    setLoading(false)
+    // Load actual user data from authentication API
+    const loadUserData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include'
+        })
+        
+        if (response.ok) {
+          const userData = await response.json()
+          console.log('Settings: Loaded user data:', userData)
+          setUser(userData)
+          setUsernameForm({ currentPassword: '', newUsername: userData.displayName })
+          setEmailForm({ currentPassword: '', newEmail: userData.email })
+          setAppearInRoommateSearch(userData.roommateOptIn || false)
+        } else {
+          console.error('Settings: Failed to load user data, redirecting to login')
+          window.location.href = '/'
+        }
+      } catch (error) {
+        console.error('Settings: Error loading user data:', error)
+        window.location.href = '/'
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadUserData()
   }, [])
 
   // Update URL hash when tab changes
