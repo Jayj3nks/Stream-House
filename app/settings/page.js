@@ -127,7 +127,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setUser(prev => ({ ...prev, avatarUrl: data.url }))
+        setUser(prev => ({ ...prev, avatarUrl: data.avatarUrl }))
         toast({
           title: "Profile picture updated",
           description: "Your new profile picture has been saved."
