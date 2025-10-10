@@ -120,6 +120,15 @@ class StorageAdapter {
 
   async deleteFile(key: string): Promise<void> {
     try {
+      if (this.useCloudinary) {
+        await this.deleteFromCloudinary(key);
+        return;
+      }
+
+      if (!this.s3Client) {
+        throw new Error("No storage provider configured");
+      }
+
       const command = new DeleteObjectCommand({
         Bucket: this.bucketName,
         Key: key,
