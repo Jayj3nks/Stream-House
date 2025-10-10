@@ -27,7 +27,7 @@ CORS_ORIGINS=*
 
 | Variable Name | Value | Status |
 |---------------|-------|--------|
-| `MONGO_URL` | `mongodb+srv://Vercel-Admin-StreamHouse:MD91a0MCKVOTR9W@streamhouse.s5clqtw.mongodb.net/?retryWrites=true&w=majority` | ✅ Set |
+| `MONGO_URL` | `mongodb+srv://Vercel-Admin-StreamHouse:Zoey2020@streamhouse.s5c1qtw.mongodb.net/?retryWrites=true&w=majority&appName=StreamHouse` | ✅ Set |
 | `DB_NAME` | `stream_house` | ✅ Set |
 | `JWT_SECRET` | `streamhouse-production-secret-key-2025` | ✅ Set |
 | `NEXT_PUBLIC_BASE_URL` | `https://stream-house-jeremis-projects-44d2e796.vercel.app` | ✅ Set |
