@@ -1,0 +1,80 @@
+# Stream-House Deployment Guide
+
+## Environment Variables Configuration
+
+### Required Environment Variables
+
+Ensure these environment variables are set in both your local `.env` file and Vercel deployment:
+
+```bash
+# Database Configuration
+MONGO_URL=mongodb+srv://Vercel-Admin-StreamHouse:MD91a0MCKVOTR9W@streamhouse.s5clqtw.mongodb.net/?retryWrites=true&w=majority
+DB_NAME=stream_house
+
+# Application URLs
+NEXT_PUBLIC_BASE_URL=https://stream-house-jeremis-projects-44d2e796.vercel.app
+
+# Authentication
+JWT_SECRET=streamhouse-production-secret-key-2025
+
+# CORS Configuration
+CORS_ORIGINS=*
+```
+
+### Vercel Environment Variables Setup
+
+1. Go to your Vercel dashboard → Project Settings → Environment Variables
+2. Add the following variables for **Production**, **Preview**, and **Development**:
+
+| Variable Name | Value |
+|---------------|-------|
+| `MONGO_URL` | `mongodb+srv://Vercel-Admin-StreamHouse:MD91a0MCKVOTR9W@streamhouse.s5clqtw.mongodb.net/?retryWrites=true&w=majority` |
+| `DB_NAME` | `stream_house` |
+| `JWT_SECRET` | `streamhouse-production-secret-key-2025` |
+| `NEXT_PUBLIC_BASE_URL` | `https://stream-house-jeremis-projects-44d2e796.vercel.app` |
+
+### Health Check
+
+After deployment, visit `/api/health` to verify:
+- ✅ Environment variables are loaded
+- ✅ MongoDB connection is successful
+- ✅ JWT configuration is valid
+
+### Troubleshooting
+
+**MongoDB Connection Issues:**
+- Verify the MongoDB Atlas cluster is running
+- Check IP whitelist includes Vercel's IP ranges (or use 0.0.0.0/0 for all IPs)
+- Ensure database user has proper read/write permissions
+
+**Authentication Issues:**
+- Verify JWT_SECRET matches between environments
+- Check cookie settings in production (secure: true)
+
+**Static Assets:**
+- Images and static files are handled by Next.js Image Optimization
+- Supported domains configured in `next.config.js`
+
+### Database Migration
+
+If switching databases:
+1. Export data from old database
+2. Update MONGO_URL environment variable
+3. Import data to new database
+4. Test health endpoint
+
+### CI/CD Pipeline
+
+GitHub Actions workflow automatically:
+- Runs TypeScript type checking
+- Performs ESLint validation
+- Executes Prettier formatting checks
+- Builds production bundle
+- Tests health endpoint functionality
+
+## Security Notes
+
+- Never commit `.env` files to version control
+- Use strong JWT secrets in production
+- Configure CORS origins appropriately for production
+- Enable MongoDB Atlas network access restrictions
