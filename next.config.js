@@ -5,8 +5,10 @@ const nextConfig = {
     unoptimized: true,
     domains: [
       "api.dicebear.com",
-      "avatars.githubusercontent.com",
+      "avatars.githubusercontent.com", 
       "lh3.googleusercontent.com",
+      "res.cloudinary.com",
+      "cloudinary.com",
     ],
     remotePatterns: [
       {
