@@ -58,7 +58,7 @@ export async function POST(request) {
     const key = `avatars/${user.id}_${Date.now()}_${file.name}`;
 
     try {
-      // Use storage adapter (will fallback to mock in development)
+      // Use storage adapter (will automatically choose S3, Cloudinary, or Mock)
       const { storage } = await import("../../../../lib/storage.ts");
       const uploadResult = await storage.uploadFile(buffer, key, file.type);
 
@@ -74,12 +74,14 @@ export async function POST(request) {
         );
       }
 
-      console.log("MongoDB: Avatar uploaded and updated for user:", user.email);
+      console.log("MongoDB: Avatar uploaded and updated for user:", user.email, "URL:", uploadResult.url);
 
       return NextResponse.json({
         success: true,
         avatarUrl: uploadResult.url,
         message: "Avatar updated successfully",
+        storageProvider: uploadResult.url.includes('cloudinary.com') ? 'Cloudinary' : 
+                        uploadResult.url.includes('amazonaws.com') ? 'AWS S3' : 'Mock'
       });
     } catch (uploadError) {
       console.error("Avatar upload failed:", uploadError);
