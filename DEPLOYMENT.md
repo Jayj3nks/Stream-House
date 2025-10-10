@@ -8,7 +8,7 @@
 
 ```bash
 # Database Configuration - VERIFIED WITH VERCEL
-MONGO_URL=mongodb+srv://Vercel-Admin-StreamHouse:MD91a0MCKVOTR9W@streamhouse.s5clqtw.mongodb.net/?retryWrites=true&w=majority
+MONGO_URL=mongodb+srv://Vercel-Admin-StreamHouse:Zoey2020@streamhouse.s5c1qtw.mongodb.net/?retryWrites=true&w=majority&appName=StreamHouse
 DB_NAME=stream_house
 
 # Application URLs - VERIFIED WITH VERCEL  
