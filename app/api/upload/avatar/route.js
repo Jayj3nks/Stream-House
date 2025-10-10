@@ -104,20 +104,21 @@ export async function POST(request) {
         avatarUrl: avatarUrl
       })
     
-    if (!updatedUser) {
-      return NextResponse.json(
-        { error: "Failed to update avatar" },
-        { status: 500 }
-      )
+      if (!updatedUser) {
+        return NextResponse.json(
+          { error: "Failed to update fallback avatar" },
+          { status: 500 }
+        )
+      }
+
+      console.log('MongoDB: Fallback avatar updated for user:', user.email)
+
+      return NextResponse.json({
+        success: true,
+        avatarUrl: avatarUrl,
+        message: "Avatar updated successfully (using fallback)"
+      })
     }
-
-    console.log('MongoDB: Avatar updated for user:', user.email)
-
-    return NextResponse.json({
-      success: true,
-      avatarUrl: avatarUrl,
-      message: "Avatar updated successfully"
-    })
     
   } catch (error) {
     console.error('MongoDB: Avatar upload error:', error)
