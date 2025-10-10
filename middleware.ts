@@ -9,7 +9,19 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
+    pathname.startsWith('/static/') ||
     pathname.startsWith('/favicon.ico') ||
+    pathname.includes('.') && (
+      pathname.endsWith('.ico') ||
+      pathname.endsWith('.png') ||
+      pathname.endsWith('.jpg') ||
+      pathname.endsWith('.jpeg') ||
+      pathname.endsWith('.gif') ||
+      pathname.endsWith('.svg') ||
+      pathname.endsWith('.css') ||
+      pathname.endsWith('.js') ||
+      pathname.endsWith('.map')
+    ) ||
     pathname === '/' ||
     pathname === '/signup' ||
     pathname === '/login'
