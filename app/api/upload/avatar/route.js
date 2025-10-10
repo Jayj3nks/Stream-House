@@ -61,28 +61,64 @@ export async function POST(request) {
       )
     }
 
-    // For now, just create a avatar URL using dicebear
-    const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=b6e3f4,c0aede,d1d4f9`
+    // Convert file to buffer for storage
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
     
-    // Update user with new avatar URL
-    const updatedUser = await mongoUserRepo.updateUser(user.id, {
-      avatarUrl: avatarUrl
-    })
+    // Generate unique key for the file
+    const key = `avatars/${user.id}_${Date.now()}_${file.name}`
     
-    if (!updatedUser) {
-      return NextResponse.json(
-        { error: "Failed to update avatar" },
-        { status: 500 }
-      )
+    try {
+      // Use storage adapter (will fallback to mock in development)
+      const { storage } = await import('../../../../lib/storage.ts')
+      const uploadResult = await storage.uploadFile(buffer, key, file.type)
+      
+      // Update user with new avatar URL
+      const updatedUser = await mongoUserRepo.updateUser(user.id, {
+        avatarUrl: uploadResult.url
+      })
+      
+      if (!updatedUser) {
+        return NextResponse.json(
+          { error: "Failed to update avatar" },
+          { status: 500 }
+        )
+      }
+
+      console.log('MongoDB: Avatar uploaded and updated for user:', user.email)
+
+      return NextResponse.json({
+        success: true,
+        avatarUrl: uploadResult.url,
+        message: "Avatar updated successfully"
+      })
+      
+    } catch (uploadError) {
+      console.error('Avatar upload failed:', uploadError)
+      
+      // Fallback to dicebear avatar
+      const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}&backgroundColor=b6e3f4,c0aede,d1d4f9`
+      
+      // Update user with fallback avatar URL
+      const updatedUser = await mongoUserRepo.updateUser(user.id, {
+        avatarUrl: avatarUrl
+      })
+    
+      if (!updatedUser) {
+        return NextResponse.json(
+          { error: "Failed to update fallback avatar" },
+          { status: 500 }
+        )
+      }
+
+      console.log('MongoDB: Fallback avatar updated for user:', user.email)
+
+      return NextResponse.json({
+        success: true,
+        avatarUrl: avatarUrl,
+        message: "Avatar updated successfully (using fallback)"
+      })
     }
-
-    console.log('MongoDB: Avatar updated for user:', user.email)
-
-    return NextResponse.json({
-      success: true,
-      avatarUrl: avatarUrl,
-      message: "Avatar updated successfully"
-    })
     
   } catch (error) {
     console.error('MongoDB: Avatar upload error:', error)
