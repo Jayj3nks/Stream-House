@@ -58,6 +58,14 @@ class StorageAdapter {
     metadata?: Record<string, string>,
   ): Promise<UploadResult> {
     try {
+      if (this.useCloudinary) {
+        return await this.uploadToCloudinary(file, key, contentType);
+      }
+
+      if (!this.s3Client) {
+        throw new Error("No storage provider configured");
+      }
+
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
