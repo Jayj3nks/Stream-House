@@ -35,8 +35,8 @@ class StorageAdapter {
     this.bucketName = process.env.S3_BUCKET_NAME || "stream-house-uploads";
     
     // Check if AWS credentials are available
-    const hasAWSCredentials = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
-    const hasCloudinary = process.env.CLOUDINARY_URL || (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY);
+    const hasAWSCredentials = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+    const hasCloudinary = !!(process.env.CLOUDINARY_URL || (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY));
     
     this.useCloudinary = !hasAWSCredentials && hasCloudinary;
     
