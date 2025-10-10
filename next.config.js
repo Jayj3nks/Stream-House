@@ -1,7 +1,15 @@
 const nextConfig = {
   output: 'standalone',
+  reactStrictMode: true,
   images: {
     unoptimized: true,
+    domains: ['api.dicebear.com', 'avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
   experimental: {
     // Remove if not using Server Components
