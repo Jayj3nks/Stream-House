@@ -96,6 +96,15 @@ class StorageAdapter {
     expiresIn = 3600,
   ): Promise<string> {
     try {
+      if (this.useCloudinary) {
+        // For Cloudinary, we'll return a placeholder URL since direct upload URLs work differently
+        return `cloudinary://upload/${key}`;
+      }
+
+      if (!this.s3Client) {
+        throw new Error("No storage provider configured");
+      }
+
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
