@@ -150,7 +150,53 @@ class StorageAdapter {
   }
 
   getPublicUrl(key: string): string {
+    if (this.useCloudinary) {
+      // For Cloudinary, construct the URL based on the key
+      const publicId = key.replace(/\.[^/.]+$/, ""); // Remove file extension
+      return cloudinary.url(publicId, { secure: true });
+    }
     return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
+  private async uploadToCloudinary(
+    file: Buffer | Uint8Array,
+    key: string,
+    contentType: string,
+  ): Promise<UploadResult> {
+    return new Promise((resolve, reject) => {
+      const publicId = key.replace(/\.[^/.]+$/, ""); // Remove file extension for public_id
+      
+      cloudinary.uploader.upload_stream(
+        {
+          public_id: publicId,
+          resource_type: contentType.startsWith("video/") ? "video" : "auto",
+          folder: "stream-house",
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          
+          if (!result) {
+            reject(new Error("No result from Cloudinary"));
+            return;
+          }
+
+          resolve({
+            url: result.secure_url,
+            key: result.public_id,
+            size: result.bytes,
+            contentType,
+          });
+        }
+      ).end(file);
+    });
+  }
+
+  private async deleteFromCloudinary(key: string): Promise<void> {
+    const publicId = key.replace(/\.[^/.]+$/, ""); // Remove file extension
+    await cloudinary.uploader.destroy(publicId);
   }
 }
 
