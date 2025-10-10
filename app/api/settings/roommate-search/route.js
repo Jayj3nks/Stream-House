@@ -1,68 +1,63 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { mongoUserRepo } from "../../../../lib/repositories/mongodb-user.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'streamer-house-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET || "streamer-house-secret-key";
 
 export async function PUT(request) {
   try {
-    const token = request.cookies.get("access_token")?.value
-    
+    const token = request.cookies.get("access_token")?.value;
+
     if (!token) {
-      return NextResponse.json(
-        { error: "No token provided" }, 
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "No token provided" }, { status: 401 });
     }
 
-    let decoded
+    let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET)
+      decoded = jwt.verify(token, JWT_SECRET);
     } catch (jwtError) {
-      return NextResponse.json(
-        { error: "Invalid token" }, 
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const user = await mongoUserRepo.getUserById(decoded.userId)
-    
+    const user = await mongoUserRepo.getUserById(decoded.userId);
+
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" }, 
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
-    const { appearInRoommateSearch } = await request.json()
-    
-    console.log('MongoDB: Updating roommate search visibility for user:', user.email, 'to:', appearInRoommateSearch)
+    const { appearInRoommateSearch } = await request.json();
+
+    console.log(
+      "MongoDB: Updating roommate search visibility for user:",
+      user.email,
+      "to:",
+      appearInRoommateSearch,
+    );
 
     // Update the user's roommate opt-in setting
     const updatedUser = await mongoUserRepo.updateUser(user.id, {
-      roommateOptIn: Boolean(appearInRoommateSearch)
-    })
-    
+      roommateOptIn: Boolean(appearInRoommateSearch),
+    });
+
     if (!updatedUser) {
       return NextResponse.json(
         { error: "Failed to update roommate search setting" },
-        { status: 500 }
-      )
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
       appearInRoommateSearch: Boolean(appearInRoommateSearch),
-      message: "Roommate search visibility updated successfully"
-    })
-    
+      message: "Roommate search visibility updated successfully",
+    });
   } catch (error) {
-    console.error('MongoDB: Update roommate search error:', error)
+    console.error("MongoDB: Update roommate search error:", error);
     return NextResponse.json(
-      { error: "Internal server error" }, 
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

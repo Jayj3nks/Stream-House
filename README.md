@@ -5,6 +5,7 @@ A modern Next.js platform helping streamers and content creators organize into h
 ## 🚀 Features
 
 ### Core Features
+
 - **Dashboard-First Experience** - Post-login landing with house management
 - **Message Board** - Real-time communication within houses
 - **Profile Management** - Comprehensive creator profiles with validation
@@ -13,6 +14,7 @@ A modern Next.js platform helping streamers and content creators organize into h
 - **House Management** - Create and manage streaming houses
 
 ### Latest Updates (v2.0)
+
 - ✅ **Persistent Authentication** - No more logout on browser back/refresh
 - ✅ **Profile Validation** - Requires at least one field before completion
 - ✅ **Dashboard Landing** - Clean post-login experience with message board
@@ -31,12 +33,15 @@ A modern Next.js platform helping streamers and content creators organize into h
 ## 📦 Local Development Setup
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - MongoDB (local or cloud)
 - Yarn package manager
 
 ### Quick Start
+
 1. **Clone and install dependencies**:
+
 ```bash
 git clone <your-repo>
 cd stream-house
@@ -44,11 +49,13 @@ yarn install
 ```
 
 2. **Environment setup**:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local` with your values:
+
 ```bash
 # Required
 MONGO_URL=mongodb://localhost:27017
@@ -62,6 +69,7 @@ CSQ_ENGAGE_DEDUP_HOURS=24
 ```
 
 3. **Start development server**:
+
 ```bash
 yarn dev
 ```
@@ -77,6 +85,7 @@ yarn dev
 
 1. **Connect your repository** to Vercel
 2. **Add environment variables** in Vercel dashboard:
+
    ```
    MONGO_URL=your-mongodb-atlas-url
    DB_NAME=streamer_house_prod
@@ -94,26 +103,31 @@ yarn dev
 ## 🎮 How to Use
 
 ### 1. Sign Up & Complete Profile
+
 - Create account with email/password and enhanced profile fields
 - Add platforms, niches, games, location, and streaming schedule
 - **Must fill at least one profile field** to complete setup
 
 ### 2. Dashboard Experience
+
 - After login, land directly on your **Dashboard**
 - View your houses in the sidebar
 - Access the **Message Board** for active house communication
 
 ### 3. House Management
+
 - Create your first house (streaming/content house)
 - Invite other creators to join
 - Use the message board to coordinate and communicate
 
 ### 4. Find Roommates
+
 - Navigate to "Find Roommates" from dashboard
 - Filter by **location**, **budget range**, and **interests**
 - Message potential roommates or send house invitations
 
 ### 5. Profile & Settings
+
 - Update your profile information anytime
 - Toggle roommate search visibility
 - Manage account settings and preferences
@@ -121,6 +135,7 @@ yarn dev
 ## 🏗 Architecture
 
 ### Database Schema
+
 ```javascript
 // Users Collection
 {
@@ -132,7 +147,7 @@ yarn dev
   createdAt: Date
 }
 
-// Squads Collection  
+// Squads Collection
 {
   id: "uuid",
   name: "Squad Name",
@@ -144,7 +159,7 @@ yarn dev
 
 // Posts Collection
 {
-  id: "uuid", 
+  id: "uuid",
   url: "https://tiktok.com/@user/video/123",
   title: "My Amazing Video",
   platform: "TikTok",
@@ -157,7 +172,7 @@ yarn dev
 // Engagements Collection
 {
   id: "uuid",
-  postId: "post_uuid", 
+  postId: "post_uuid",
   userId: "user_uuid",
   type: "like|comment|share",
   createdAt: Date
@@ -165,10 +180,11 @@ yarn dev
 ```
 
 ### API Endpoints
+
 ```
 Authentication:
 POST /api/auth/signup     - Create new user account
-POST /api/auth/login      - Login existing user  
+POST /api/auth/login      - Login existing user
 GET  /api/auth/me         - Get current user info
 
 Squad Management:
@@ -187,7 +203,9 @@ GET  /api/credits/{userId}          - Get user credits
 ## 🧪 Testing
 
 ### Backend API Testing
+
 All endpoints are thoroughly tested:
+
 - ✅ User signup/login with JWT authentication
 - ✅ Squad creation and member management
 - ✅ Post sharing with URL metadata fetching
@@ -195,7 +213,9 @@ All endpoints are thoroughly tested:
 - ✅ Error handling and validation
 
 ### Frontend Testing
+
 Complete user journey tested:
+
 - ✅ Account creation and authentication
 - ✅ Squad creation workflow
 - ✅ Post sharing functionality
@@ -205,20 +225,23 @@ Complete user journey tested:
 ## 🚧 Future Enhancements (V2 Roadmap)
 
 ### Advanced Features
+
 - **Collab Matching Algorithm** - AI-powered creator matching
-- **Challenge System** - Squad challenges and competitions  
+- **Challenge System** - Squad challenges and competitions
 - **Streak Tracking** - Post and engagement streaks
 - **OBS/TikTok Overlay** - Live streaming widgets
 - **Payment Integration** - Pro plans with Stripe
 - **Admin CMS** - Platform management dashboard
 
 ### Platform Integrations
+
 - **Deep Link Support** - Direct app opening
 - **API Integrations** - Platform-specific APIs for verification
 - **Notification System** - Email and push notifications
 - **Calendar Integration** - Collab scheduling
 
 ### Social Features
+
 - **Public Squad Directory** - Discoverable communities
 - **Member Profiles** - Extended creator profiles
 - **Achievement System** - Badges and rewards
@@ -227,6 +250,7 @@ Complete user journey tested:
 ## 🔒 Security & Performance
 
 ### Security Features
+
 - JWT token authentication with secure secrets
 - Password hashing with bcrypt (10 rounds)
 - Input validation and sanitization
@@ -234,6 +258,7 @@ Complete user journey tested:
 - Rate limiting ready for production
 
 ### Performance Optimizations
+
 - MongoDB connection pooling
 - Efficient database queries with indexes
 - Optimistic UI updates for real-time feel
@@ -243,6 +268,7 @@ Complete user journey tested:
 ## 📱 Mobile Responsive
 
 The entire application is fully responsive and works perfectly on:
+
 - Desktop browsers (Chrome, Firefox, Safari, Edge)
 - Mobile devices (iOS Safari, Chrome Mobile)
 - Tablet devices with touch-friendly interfaces
@@ -250,22 +276,26 @@ The entire application is fully responsive and works perfectly on:
 ## 🌟 Key Features & Benefits
 
 ### 🔐 Persistent Authentication
+
 - **HttpOnly cookie** sessions prevent logout on browser back/refresh
 - **Middleware protection** for authenticated routes
 - **Seamless experience** across all pages
 
 ### 🏠 Dashboard-First Design
+
 - **Post-login landing** on dashboard instead of create house
 - **Message board** for real-time house communication
 - **House management** from centralized location
 
 ### 👥 Enhanced Roommate Finder
+
 - **Location-based filtering** for local collaborations
 - **Budget range filters** for compatible living situations
 - **Interest matching** for like-minded creators
 - **Clean, usable interface** with structured results
 
 ### ✅ Profile Validation
+
 - **Required fields** ensure complete profiles
 - **At least one field** must be filled to complete setup
 - **Better matching** through comprehensive profiles
@@ -281,6 +311,7 @@ The entire application is fully responsive and works perfectly on:
 ## 📞 Support & Documentation
 
 For questions, feature requests, or bug reports:
+
 - Check the comprehensive setup instructions above
 - Review the API endpoints in the code
 - Test locally with the provided development setup
@@ -291,4 +322,4 @@ MIT License - free to use for your streaming/creator platform projects!
 
 ---
 
-**Stream-House** - *Building the future of creator collaboration* 🏠✨
+**Stream-House** - _Building the future of creator collaboration_ 🏠✨

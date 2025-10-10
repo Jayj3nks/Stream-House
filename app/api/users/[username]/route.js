@@ -1,37 +1,34 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from 'next/server'
-import { mongoUserRepo } from '../../../../lib/repositories/mongodb-user.js'
+import { NextResponse } from "next/server";
+import { mongoUserRepo } from "../../../../lib/repositories/mongodb-user.js";
 
 export async function GET(request, { params }) {
   try {
-    const { username } = params
-    
+    const { username } = params;
+
     if (!username) {
       return NextResponse.json(
-        { error: "Username is required" }, 
-        { status: 400 }
-      )
+        { error: "Username is required" },
+        { status: 400 },
+      );
     }
 
-    console.log('MongoDB: Looking up user by username:', username)
-    
+    console.log("MongoDB: Looking up user by username:", username);
+
     // Get user by username
-    const user = await mongoUserRepo.getUserByUsername(username)
-    
+    const user = await mongoUserRepo.getUserByUsername(username);
+
     if (!user) {
-      console.log('MongoDB: User not found for username:', username)
-      return NextResponse.json(
-        { error: "User not found" }, 
-        { status: 404 }
-      )
+      console.log("MongoDB: User not found for username:", username);
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log('MongoDB: User found:', user.email)
+    console.log("MongoDB: User found:", user.email);
 
     // Return user profile data (without password)
-    const { passwordHash: _, ...userProfile } = user
-    
+    const { passwordHash: _, ...userProfile } = user;
+
     // Add mock engagement stats for now
     const profileData = {
       ...userProfile,
@@ -41,19 +38,18 @@ export async function GET(request, { params }) {
         totalPoints: user.totalPoints || 0,
         engagePoints: 0,
         clipPoints: 0,
-        collabPoints: 0
+        collabPoints: 0,
       },
       posts: [], // Mock empty posts for now
-      clips: []  // Mock empty clips for now
-    }
+      clips: [], // Mock empty clips for now
+    };
 
-    return NextResponse.json(profileData)
-    
+    return NextResponse.json(profileData);
   } catch (error) {
-    console.error('MongoDB: Get user profile error:', error)
+    console.error("MongoDB: Get user profile error:", error);
     return NextResponse.json(
-      { error: "Internal server error" }, 
-      { status: 500 }
-    )
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

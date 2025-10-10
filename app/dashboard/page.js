@@ -1,132 +1,151 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Home, Users, MessageCircle, Settings, LogOut, Plus, Send } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Home,
+  Users,
+  MessageCircle,
+  Settings,
+  LogOut,
+  Plus,
+  Send,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null)
-  const [houses, setHouses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState('')
-  const router = useRouter()
+  const [user, setUser] = useState(null);
+  const [houses, setHouses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     // Load actual user data from authentication API
     const loadUserData = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include'
-        })
-        
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
         if (response.ok) {
-          const userData = await response.json()
-          console.log('Dashboard: Loaded user data:', userData)
-          setUser(userData)
+          const userData = await response.json();
+          console.log("Dashboard: Loaded user data:", userData);
+          setUser(userData);
         } else {
-          console.error('Dashboard: Failed to load user data')
+          console.error("Dashboard: Failed to load user data");
           // Redirect to login if not authenticated
-          router.push('/')
-          return
+          router.push("/");
+          return;
         }
       } catch (error) {
-        console.error('Dashboard: Error loading user data:', error)
-        router.push('/')
-        return
+        console.error("Dashboard: Error loading user data:", error);
+        router.push("/");
+        return;
       }
-      
+
       // Load houses (keeping as empty for now)
-      setHouses([])
-      setLoading(false)
-    }
-    
-    loadUserData()
-    
+      setHouses([]);
+      setLoading(false);
+    };
+
+    loadUserData();
+
     // Load mock chat messages
     setMessages([
       {
         id: 1,
-        user: 'Gaming Creator',
-        message: 'Hey everyone! Just dropped a new gaming video, would love some engagement!',
-        timestamp: '10:30 AM',
-        userId: 'user-1'
+        user: "Gaming Creator",
+        message:
+          "Hey everyone! Just dropped a new gaming video, would love some engagement!",
+        timestamp: "10:30 AM",
+        userId: "user-1",
       },
       {
         id: 2,
-        user: 'Beauty Influencer', 
-        message: 'Anyone want to do a collab next week? I\'m in LA',
-        timestamp: '10:45 AM',
-        userId: 'user-2'
+        user: "Beauty Influencer",
+        message: "Anyone want to do a collab next week? I'm in LA",
+        timestamp: "10:45 AM",
+        userId: "user-2",
       },
       {
         id: 3,
-        user: 'Tech Reviewer',
-        message: 'Just got the new iPhone, planning a review. Any specific features you want me to cover?',
-        timestamp: '11:15 AM',
-        userId: 'user-3'
-      }
-    ])
-  }, [])
+        user: "Tech Reviewer",
+        message:
+          "Just got the new iPhone, planning a review. Any specific features you want me to cover?",
+        timestamp: "11:15 AM",
+        userId: "user-3",
+      },
+    ]);
+  }, []);
 
   const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (!newMessage.trim()) return
-    
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
     const message = {
       id: messages.length + 1,
-      user: user?.displayName || 'Creator User',
+      user: user?.displayName || "Creator User",
       message: newMessage,
-      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      userId: user?.id || 'current-user'
-    }
-    
-    setMessages([...messages, message])
-    setNewMessage('')
-  }
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      userId: user?.id || "current-user",
+    };
+
+    setMessages([...messages, message]);
+    setNewMessage("");
+  };
 
   useEffect(() => {
     // Load user data without API calls to avoid 502 issues
     // In a real app, this would come from server-side rendering or a working API
     setUser({
-      id: 'user-id',
-      email: 'user@example.com',
-      displayName: 'Creator User',
-      platforms: ['TikTok', 'YouTube'],
-      niches: ['Gaming']
-    })
-    setHouses([]) // Start with empty houses
-    setLoading(false)
-  }, [])
+      id: "user-id",
+      email: "user@example.com",
+      displayName: "Creator User",
+      platforms: ["TikTok", "YouTube"],
+      niches: ["Gaming"],
+    });
+    setHouses([]); // Start with empty houses
+    setLoading(false);
+  }, []);
 
   const handleLogout = async () => {
     try {
       // Create a form to submit logout
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = '/api/logout-form'
-      form.style.display = 'none'
-      document.body.appendChild(form)
-      form.submit()
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/api/logout-form";
+      form.style.display = "none";
+      document.body.appendChild(form);
+      form.submit();
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error("Logout error:", error);
       // Fallback - just redirect to home
-      window.location.href = '/'
+      window.location.href = "/";
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -135,21 +154,36 @@ export default function Dashboard() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/dashboard" className="text-2xl font-bold text-purple-600">
+            <Link
+              href="/dashboard"
+              className="text-2xl font-bold text-purple-600"
+            >
               Streamer House
             </Link>
-            
+
             <nav className="flex items-center space-x-6">
-              <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 font-medium">
+              <Link
+                href="/dashboard"
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
                 Dashboard
               </Link>
-              <Link href="/messages" className="text-gray-700 hover:text-purple-600 font-medium">
+              <Link
+                href="/messages"
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
                 Messages
               </Link>
-              <Link href="/roommates" className="text-gray-700 hover:text-purple-600 font-medium">
+              <Link
+                href="/roommates"
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
                 Roommates
               </Link>
-              <Link href="/settings" className="text-gray-700 hover:text-purple-600 font-medium">
+              <Link
+                href="/settings"
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
                 Settings
               </Link>
               <Button
@@ -170,7 +204,7 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.displayName || 'Creator'}! 👋
+            Welcome back, {user?.displayName || "Creator"}! 👋
           </h1>
           <p className="text-gray-600">
             Manage your houses, connect with creators, and grow your community.
@@ -184,8 +218,12 @@ export default function Dashboard() {
               <div className="flex items-center">
                 <Home className="w-8 h-8 text-purple-600" />
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">My Houses</h3>
-                  <p className="text-2xl font-bold text-purple-600">{houses.length}</p>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    My Houses
+                  </h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {houses.length}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -196,7 +234,9 @@ export default function Dashboard() {
               <div className="flex items-center">
                 <Users className="w-8 h-8 text-blue-600" />
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Connections</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Connections
+                  </h3>
                   <p className="text-2xl font-bold text-blue-600">0</p>
                 </div>
               </div>
@@ -208,7 +248,9 @@ export default function Dashboard() {
               <div className="flex items-center">
                 <MessageCircle className="w-8 h-8 text-green-600" />
                 <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Messages</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Messages
+                  </h3>
                   <p className="text-2xl font-bold text-green-600">0</p>
                 </div>
               </div>
@@ -238,31 +280,43 @@ export default function Dashboard() {
             {houses.length === 0 ? (
               <div className="text-center py-12">
                 <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No houses yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No houses yet
+                </h3>
                 <p className="text-gray-600 mb-6">
-                  Start building your creator community by creating your first house.
+                  Start building your creator community by creating your first
+                  house.
                 </p>
                 <Button asChild>
-                  <Link href="/house/create">
-                    Create Your First House
-                  </Link>
+                  <Link href="/house/create">Create Your First House</Link>
                 </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {houses.map((house) => (
-                  <Card key={house.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                  <Card
+                    key={house.id}
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                  >
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-gray-900">{house.name}</h4>
-                        <Badge variant="outline">{house.memberCount} members</Badge>
+                        <h4 className="font-semibold text-gray-900">
+                          {house.name}
+                        </h4>
+                        <Badge variant="outline">
+                          {house.memberCount} members
+                        </Badge>
                       </div>
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                         {house.description}
                       </p>
                       <div className="flex flex-wrap gap-1 mb-3">
                         {house.niches?.map((niche) => (
-                          <Badge key={niche} variant="secondary" className="text-xs">
+                          <Badge
+                            key={niche}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             {niche}
                           </Badge>
                         ))}
@@ -291,12 +345,11 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600 mb-4">
-                  Discover creators in your area who are looking for roommates and collaboration opportunities.
+                  Discover creators in your area who are looking for roommates
+                  and collaboration opportunities.
                 </p>
                 <Button asChild className="w-full">
-                  <Link href="/roommates">
-                    Browse Roommates
-                  </Link>
+                  <Link href="/roommates">Browse Roommates</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -352,17 +405,21 @@ export default function Dashboard() {
                 <ScrollArea className="flex-1 px-4 pb-4">
                   <div className="space-y-3">
                     {messages.map((message) => (
-                      <div 
-                        key={message.id} 
+                      <div
+                        key={message.id}
                         className={`flex flex-col space-y-1 ${
-                          message.userId === user?.id ? 'items-end' : 'items-start'
+                          message.userId === user?.id
+                            ? "items-end"
+                            : "items-start"
                         }`}
                       >
-                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                          message.userId === user?.id 
-                            ? 'bg-purple-600 text-white' 
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
+                        <div
+                          className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                            message.userId === user?.id
+                              ? "bg-purple-600 text-white"
+                              : "bg-gray-100 text-gray-900"
+                          }`}
+                        >
                           {message.userId !== user?.id && (
                             <div className="font-semibold text-xs mb-1 text-purple-600">
                               {message.user}
@@ -377,7 +434,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </ScrollArea>
-                
+
                 {/* Message Input */}
                 <div className="border-t p-4">
                   <form onSubmit={handleSendMessage} className="flex space-x-2">
@@ -387,7 +444,11 @@ export default function Dashboard() {
                       placeholder="Type a message..."
                       className="flex-1"
                     />
-                    <Button type="submit" size="sm" disabled={!newMessage.trim()}>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={!newMessage.trim()}
+                    >
                       <Send className="w-4 h-4" />
                     </Button>
                   </form>
@@ -398,5 +459,5 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
-  )
+  );
 }

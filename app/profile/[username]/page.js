@@ -1,84 +1,91 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useToast } from '@/hooks/use-toast'
-import { Toaster } from '@/components/ui/toaster'
-import { ArrowLeft, ExternalLink, Play, Scissors, User } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { ArrowLeft, ExternalLink, Play, Scissors, User } from "lucide-react";
 
 export default function ProfilePage({ params }) {
-  const { username } = params
-  const [profile, setProfile] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { toast } = useToast()
+  const { username } = params;
+  const [profile, setProfile] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { toast } = useToast();
 
-  const isOwnProfile = currentUser && profile && currentUser.username === profile.user.username
+  const isOwnProfile =
+    currentUser && profile && currentUser.username === profile.user.username;
 
   useEffect(() => {
-    loadCurrentUser()
-    loadProfile(username)
-  }, [username])
+    loadCurrentUser();
+    loadProfile(username);
+  }, [username]);
 
   const loadCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem("token");
       if (token) {
-        const response = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const response = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (response.ok) {
-          const userData = await response.json()
-          setCurrentUser(userData)
+          const userData = await response.json();
+          setCurrentUser(userData);
         }
       }
     } catch (error) {
-      console.error('Error loading current user:', error)
+      console.error("Error loading current user:", error);
     }
-  }
+  };
 
   const loadProfile = async (username) => {
     try {
-      const response = await fetch(`/api/users/${username}`)
+      const response = await fetch(`/api/users/${username}`);
       if (response.ok) {
-        const profileData = await response.json()
-        setProfile(profileData)
+        const profileData = await response.json();
+        setProfile(profileData);
       } else if (response.status === 404) {
-        setError('User not found')
+        setError("User not found");
       } else {
-        setError('Failed to load profile')  
+        setError("Failed to load profile");
       }
     } catch (error) {
-      console.error('Error loading profile:', error)
-      setError('Failed to load profile')
+      console.error("Error loading profile:", error);
+      setError("Failed to load profile");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleEngage = (postId) => {
     if (!currentUser) {
       toast({
         title: "Please sign in",
         description: "You need to be signed in to engage with posts.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     // Open engage redirect in new tab
-    const engageUrl = `/api/r/${postId}?u=${currentUser.id}`
-    window.open(engageUrl, '_blank')
-    
+    const engageUrl = `/api/r/${postId}?u=${currentUser.id}`;
+    window.open(engageUrl, "_blank");
+
     toast({
       title: "Engagement credited!",
-      description: "+1 point for engaging with content."
-    })
-  }
+      description: "+1 point for engaging with content.",
+    });
+  };
 
   if (loading) {
     return (
@@ -88,7 +95,7 @@ export default function ProfilePage({ params }) {
           <p>Loading profile...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -98,11 +105,16 @@ export default function ProfilePage({ params }) {
         <header className="border-b bg-card">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => window.location.href = '/'}>
+              <Button
+                variant="ghost"
+                onClick={() => (window.location.href = "/")}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to House
               </Button>
-              <h1 className="text-2xl font-bold text-purple-600">Creator Profile</h1>
+              <h1 className="text-2xl font-bold text-purple-600">
+                Creator Profile
+              </h1>
             </div>
           </div>
         </header>
@@ -113,12 +125,11 @@ export default function ProfilePage({ params }) {
               <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">{error}</h3>
               <p className="text-muted-foreground mb-4">
-                {error === 'User not found' 
+                {error === "User not found"
                   ? `The user "${username}" could not be found.`
-                  : 'There was an error loading this profile. Please try again.'
-                }
+                  : "There was an error loading this profile. Please try again."}
               </p>
-              <Button onClick={() => window.location.href = '/'}>
+              <Button onClick={() => (window.location.href = "/")}>
                 Return to Dashboard
               </Button>
             </CardContent>
@@ -126,11 +137,11 @@ export default function ProfilePage({ params }) {
         </div>
         <Toaster />
       </div>
-    )
+    );
   }
 
   if (!profile) {
-    return null
+    return null;
   }
 
   return (
@@ -139,11 +150,16 @@ export default function ProfilePage({ params }) {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/'}>
+            <Button
+              variant="ghost"
+              onClick={() => (window.location.href = "/")}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to House
             </Button>
-            <h1 className="text-2xl font-bold text-purple-600">Creator Profile</h1>
+            <h1 className="text-2xl font-bold text-purple-600">
+              Creator Profile
+            </h1>
           </div>
         </div>
       </header>
@@ -161,13 +177,18 @@ export default function ProfilePage({ params }) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="text-2xl font-bold">{profile.user.displayName}</h2>
-                  <p className="text-muted-foreground">@{profile.user.username}</p>
+                  <h2 className="text-2xl font-bold">
+                    {profile.user.displayName}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    @{profile.user.username}
+                  </p>
                   {profile.user.bio && (
                     <p className="mt-2 text-sm">{profile.user.bio}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    Joined {new Date(profile.user.createdAt).toLocaleDateString()}
+                    Joined{" "}
+                    {new Date(profile.user.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -176,7 +197,7 @@ export default function ProfilePage({ params }) {
                   {profile.user.totalPoints}
                 </div>
                 <p className="text-sm text-muted-foreground">Total Points</p>
-                
+
                 {/* Points Summary */}
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                   <div className="bg-blue-50 p-2 rounded-lg">
@@ -214,25 +235,30 @@ export default function ProfilePage({ params }) {
           <CardContent>
             {profile.posts.items.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No recent posts to show.</p>
+                <p className="text-muted-foreground">
+                  No recent posts to show.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.posts.items.map((post) => (
-                  <Card key={post.id} className="hover:shadow-md transition-shadow">
+                  <Card
+                    key={post.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         {/* Thumbnail */}
                         {post.thumbnailUrl && (
                           <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                            <img 
-                              src={post.thumbnailUrl} 
+                            <img
+                              src={post.thumbnailUrl}
                               alt={post.title}
                               className="w-full h-full object-cover"
                             />
                           </div>
                         )}
-                        
+
                         {/* Post Info */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -260,11 +286,13 @@ export default function ProfilePage({ params }) {
                                   <ExternalLink className="h-3 w-3" />
                                   <span>Engage</span>
                                 </Button>
-                                
+
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => window.location.href = `/clip/create?postId=${post.id}`}
+                                  onClick={() =>
+                                    (window.location.href = `/clip/create?postId=${post.id}`)
+                                  }
                                   className="flex items-center space-x-1"
                                 >
                                   <Scissors className="h-3 w-3" />
@@ -273,7 +301,7 @@ export default function ProfilePage({ params }) {
                               </>
                             )}
                           </div>
-                          
+
                           {post.clipCount > 0 && (
                             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                               <Play className="h-3 w-3" />
@@ -295,7 +323,8 @@ export default function ProfilePage({ params }) {
           <CardHeader>
             <CardTitle>Clips Made</CardTitle>
             <CardDescription>
-              Clips created by {profile.user.displayName} ({profile.clipsMade.total} total)
+              Clips created by {profile.user.displayName} (
+              {profile.clipsMade.total} total)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -306,20 +335,23 @@ export default function ProfilePage({ params }) {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.clipsMade.items.map((clip) => (
-                  <Card key={clip.id} className="hover:shadow-md transition-shadow">
+                  <Card
+                    key={clip.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         {/* Clip Thumbnail */}
                         {clip.postThumbnailUrl && (
                           <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                            <img 
-                              src={clip.postThumbnailUrl} 
+                            <img
+                              src={clip.postThumbnailUrl}
                               alt={clip.postTitle}
                               className="w-full h-full object-cover"
                             />
                           </div>
                         )}
-                        
+
                         {/* Clip Info */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -346,5 +378,5 @@ export default function ProfilePage({ params }) {
       </div>
       <Toaster />
     </div>
-  )
+  );
 }

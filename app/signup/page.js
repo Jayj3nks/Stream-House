@@ -1,197 +1,250 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { useToast } from '@/hooks/use-toast'
-import { Toaster } from '@/components/ui/toaster'
-import { ArrowLeft, ArrowRight, User, Gamepad2, MapPin, FileText } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import {
+  ArrowLeft,
+  ArrowRight,
+  User,
+  Gamepad2,
+  MapPin,
+  FileText,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const platforms = [
-  'TikTok', 'YouTube', 'Twitch', 'Instagram', 'Twitter/X', 'Discord',
-  'Facebook Gaming', 'Kick', 'Rumble', 'OnlyFans', 'Fansly'
-]
+  "TikTok",
+  "YouTube",
+  "Twitch",
+  "Instagram",
+  "Twitter/X",
+  "Discord",
+  "Facebook Gaming",
+  "Kick",
+  "Rumble",
+  "OnlyFans",
+  "Fansly",
+];
 
 const niches = [
-  'Gaming', 'Lifestyle', 'Beauty', 'Fitness', 'Comedy', 'Music',
-  'Art', 'Cooking', 'Tech', 'Fashion', 'Travel', 'Education',
-  'ASMR', 'Reaction', 'IRL Streaming', 'Just Chatting'
-]
+  "Gaming",
+  "Lifestyle",
+  "Beauty",
+  "Fitness",
+  "Comedy",
+  "Music",
+  "Art",
+  "Cooking",
+  "Tech",
+  "Fashion",
+  "Travel",
+  "Education",
+  "ASMR",
+  "Reaction",
+  "IRL Streaming",
+  "Just Chatting",
+];
 
 const popularGames = [
-  'League of Legends', 'Valorant', 'Fortnite', 'Apex Legends', 'Call of Duty',
-  'Minecraft', 'Among Us', 'Fall Guys', 'Rocket League', 'Overwatch 2',
-  'World of Warcraft', 'Grand Theft Auto V', 'Counter-Strike 2', 'Dota 2'
-]
+  "League of Legends",
+  "Valorant",
+  "Fortnite",
+  "Apex Legends",
+  "Call of Duty",
+  "Minecraft",
+  "Among Us",
+  "Fall Guys",
+  "Rocket League",
+  "Overwatch 2",
+  "World of Warcraft",
+  "Grand Theft Auto V",
+  "Counter-Strike 2",
+  "Dota 2",
+];
 
 const timeZones = [
-  'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York',
-  'America/Toronto', 'Europe/London', 'Europe/Paris', 'Europe/Berlin',
-  'Asia/Tokyo', 'Asia/Shanghai', 'Australia/Sydney'
-]
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Toronto",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Australia/Sydney",
+];
 
 export default function SignupPage() {
-  const [step, setStep] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
-  const router = useRouter()
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    displayName: '',
+    email: "",
+    password: "",
+    displayName: "",
     platforms: [],
     niches: [],
     games: [],
-    city: '',
-    timeZone: 'America/Los_Angeles',
+    city: "",
+    timeZone: "America/Los_Angeles",
     hasSchedule: false,
     schedule: {},
-    bio: ''
-  })
+    bio: "",
+  });
 
   const validateForm = () => {
     if (!formData.email || !formData.password || !formData.displayName) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields: email, password, and display name.",
-        variant: "destructive"
-      })
-      return false
+        description:
+          "Please fill in all required fields: email, password, and display name.",
+        variant: "destructive",
+      });
+      return false;
     }
 
     if (formData.password.length < 8) {
       toast({
-        title: "Validation Error", 
+        title: "Validation Error",
         description: "Password must be at least 8 characters long.",
-        variant: "destructive"
-      })
-      return false
+        variant: "destructive",
+      });
+      return false;
     }
 
     if (formData.platforms.length === 0) {
       toast({
         title: "Validation Error",
         description: "Please select at least one platform.",
-        variant: "destructive"
-      })
-      return false
+        variant: "destructive",
+      });
+      return false;
     }
 
-    return true
-  }
+    return true;
+  };
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setLoading(true)
-    
+    setLoading(true);
+
     try {
-      console.log('Submitting signup data:', formData)
-      
+      console.log("Submitting signup data:", formData);
+
       toast({
         title: "Creating Account...",
-        description: "Please wait while we set up your account."
-      })
-      
+        description: "Please wait while we set up your account.",
+      });
+
       // Use API endpoint instead of server action for consistent cookie handling
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include', // Important for cookie handling
-        body: JSON.stringify(formData)
-      })
+        credentials: "include", // Important for cookie handling
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        console.log('Signup successful:', data.user?.email)
-        
+        const data = await response.json();
+        console.log("Signup successful:", data.user?.email);
+
         toast({
           title: "Welcome to Streamer House!",
-          description: "Your account has been created successfully."
-        })
-        
+          description: "Your account has been created successfully.",
+        });
+
         // Wait a moment for cookie to be set, then redirect
         setTimeout(() => {
-          console.log('Redirecting to dashboard...')
-          window.location.href = '/dashboard'
-        }, 1000)
-        
+          console.log("Redirecting to dashboard...");
+          window.location.href = "/dashboard";
+        }, 1000);
       } else {
-        const errorData = await response.json()
-        console.error('Signup failed:', errorData.error)
+        const errorData = await response.json();
+        console.error("Signup failed:", errorData.error);
         toast({
           title: "Signup Failed",
           description: errorData.error || "Something went wrong",
-          variant: "destructive"
-        })
-        setLoading(false)
+          variant: "destructive",
+        });
+        setLoading(false);
       }
-      
     } catch (error) {
-      console.error('Signup error:', error)
+      console.error("Signup error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
-      setLoading(false)
+        variant: "destructive",
+      });
+      setLoading(false);
     }
-  }
+  };
 
   const canProceedToNextStep = () => {
     switch (step) {
       case 1:
-        return formData.email && formData.password && formData.displayName
+        return formData.email && formData.password && formData.displayName;
       case 2:
-        return formData.platforms.length > 0
+        return formData.platforms.length > 0;
       case 3:
-        return true
+        return true;
       case 4:
-        return true
+        return true;
       default:
-        return false
+        return false;
     }
-  }
+  };
 
   const nextStep = () => {
     if (!canProceedToNextStep()) {
-      let message = "Please fill in all required fields"
+      let message = "Please fill in all required fields";
       if (step === 1) {
-        message = "Please fill in email, password, and display name"
+        message = "Please fill in email, password, and display name";
       } else if (step === 2) {
-        message = "Please select at least one platform"
+        message = "Please select at least one platform";
       }
-      
+
       toast({
         title: "Required Fields Missing",
         description: message,
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
-    setStep(step + 1)
-  }
-  const prevStep = () => setStep(step - 1)
+    setStep(step + 1);
+  };
+  const prevStep = () => setStep(step - 1);
 
   const toggleArrayItem = (array, item) => {
     if (array.includes(item)) {
-      return array.filter(x => x !== item)
+      return array.filter((x) => x !== item);
     } else {
-      return [...array, item]
+      return [...array, item];
     }
-  }
+  };
 
   const renderStep1 = () => (
     <Card className="w-full max-w-2xl">
@@ -200,9 +253,7 @@ export default function SignupPage() {
           <User className="w-5 h-5 text-purple-600" />
           <CardTitle>Basic Information</CardTitle>
         </div>
-        <CardDescription>
-          Let's start with your basic details
-        </CardDescription>
+        <CardDescription>Let's start with your basic details</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -211,38 +262,46 @@ export default function SignupPage() {
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
             placeholder="your@email.com"
             required
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="displayName">Display Name *</Label>
           <Input
             id="displayName"
             value={formData.displayName}
-            onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, displayName: e.target.value })
+            }
             placeholder="How you'd like to be known"
             required
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="password">Password *</Label>
           <Input
             id="password"
             type="password"
             value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
             placeholder="At least 8 characters"
             required
           />
-          <p className="text-xs text-gray-500">Must be at least 8 characters long</p>
+          <p className="text-xs text-gray-500">
+            Must be at least 8 characters long
+          </p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   const renderStep2 = () => (
     <Card className="w-full max-w-2xl">
@@ -258,17 +317,23 @@ export default function SignupPage() {
       <CardContent className="space-y-6">
         <div>
           <Label className="text-base font-medium">Platforms *</Label>
-          <p className="text-sm text-gray-500 mb-3">Select all platforms you create content on</p>
+          <p className="text-sm text-gray-500 mb-3">
+            Select all platforms you create content on
+          </p>
           <div className="flex flex-wrap gap-2">
-            {platforms.map(platform => (
+            {platforms.map((platform) => (
               <Badge
                 key={platform}
-                variant={formData.platforms.includes(platform) ? "default" : "outline"}
+                variant={
+                  formData.platforms.includes(platform) ? "default" : "outline"
+                }
                 className="cursor-pointer hover:bg-purple-100"
-                onClick={() => setFormData({
-                  ...formData,
-                  platforms: toggleArrayItem(formData.platforms, platform)
-                })}
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    platforms: toggleArrayItem(formData.platforms, platform),
+                  })
+                }
               >
                 {platform}
               </Badge>
@@ -278,17 +343,23 @@ export default function SignupPage() {
 
         <div>
           <Label className="text-base font-medium">Content Niches</Label>
-          <p className="text-sm text-gray-500 mb-3">What type of content do you create?</p>
+          <p className="text-sm text-gray-500 mb-3">
+            What type of content do you create?
+          </p>
           <div className="flex flex-wrap gap-2">
-            {niches.map(niche => (
+            {niches.map((niche) => (
               <Badge
                 key={niche}
-                variant={formData.niches.includes(niche) ? "default" : "outline"}
+                variant={
+                  formData.niches.includes(niche) ? "default" : "outline"
+                }
                 className="cursor-pointer hover:bg-blue-100"
-                onClick={() => setFormData({
-                  ...formData,
-                  niches: toggleArrayItem(formData.niches, niche)
-                })}
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    niches: toggleArrayItem(formData.niches, niche),
+                  })
+                }
               >
                 {niche}
               </Badge>
@@ -298,17 +369,21 @@ export default function SignupPage() {
 
         <div>
           <Label className="text-base font-medium">Games (Optional)</Label>
-          <p className="text-sm text-gray-500 mb-3">Which games do you play or stream?</p>
+          <p className="text-sm text-gray-500 mb-3">
+            Which games do you play or stream?
+          </p>
           <div className="flex flex-wrap gap-2">
-            {popularGames.map(game => (
+            {popularGames.map((game) => (
               <Badge
                 key={game}
                 variant={formData.games.includes(game) ? "default" : "outline"}
                 className="cursor-pointer hover:bg-green-100"
-                onClick={() => setFormData({
-                  ...formData,
-                  games: toggleArrayItem(formData.games, game)
-                })}
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    games: toggleArrayItem(formData.games, game),
+                  })
+                }
               >
                 {game}
               </Badge>
@@ -317,7 +392,7 @@ export default function SignupPage() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   const renderStep3 = () => (
     <Card className="w-full max-w-2xl">
@@ -336,23 +411,27 @@ export default function SignupPage() {
           <Input
             id="city"
             value={formData.city}
-            onChange={(e) => setFormData({...formData, city: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
             placeholder="Los Angeles, CA"
           />
-          <p className="text-xs text-gray-500">This helps us find roommates and local collaborations</p>
+          <p className="text-xs text-gray-500">
+            This helps us find roommates and local collaborations
+          </p>
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="timeZone">Time Zone</Label>
           <select
             id="timeZone"
             value={formData.timeZone}
-            onChange={(e) => setFormData({...formData, timeZone: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, timeZone: e.target.value })
+            }
             className="w-full p-2 border rounded-md"
           >
-            {timeZones.map(tz => (
+            {timeZones.map((tz) => (
               <option key={tz} value={tz}>
-                {tz.replace('_', ' ').replace('/', ' - ')}
+                {tz.replace("_", " ").replace("/", " - ")}
               </option>
             ))}
           </select>
@@ -363,15 +442,21 @@ export default function SignupPage() {
             <Checkbox
               id="hasSchedule"
               checked={formData.hasSchedule}
-              onCheckedChange={(checked) => setFormData({...formData, hasSchedule: checked})}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, hasSchedule: checked })
+              }
             />
-            <Label htmlFor="hasSchedule">I have a regular streaming/content schedule</Label>
+            <Label htmlFor="hasSchedule">
+              I have a regular streaming/content schedule
+            </Label>
           </div>
-          <p className="text-xs text-gray-500">We can help match you with creators who have compatible schedules</p>
+          <p className="text-xs text-gray-500">
+            We can help match you with creators who have compatible schedules
+          </p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   const renderStep4 = () => (
     <Card className="w-full max-w-2xl">
@@ -390,56 +475,70 @@ export default function SignupPage() {
           <Textarea
             id="bio"
             value={formData.bio}
-            onChange={(e) => setFormData({...formData, bio: e.target.value.slice(0, 500)})}
+            onChange={(e) =>
+              setFormData({ ...formData, bio: e.target.value.slice(0, 500) })
+            }
             placeholder="Tell us about your content, goals, or what you're looking for in the creator community..."
             rows={4}
           />
-          <p className="text-xs text-gray-500">{formData.bio.length}/500 characters</p>
+          <p className="text-xs text-gray-500">
+            {formData.bio.length}/500 characters
+          </p>
         </div>
 
         <div className="bg-purple-50 p-4 rounded-lg">
-          <h4 className="font-semibold text-purple-800 mb-2">🎉 You're almost done!</h4>
+          <h4 className="font-semibold text-purple-800 mb-2">
+            🎉 You're almost done!
+          </h4>
           <p className="text-sm text-purple-700">
-            After creating your account, you'll be able to join houses, find roommates, 
-            and connect with other creators in your niche and location.
+            After creating your account, you'll be able to join houses, find
+            roommates, and connect with other creators in your niche and
+            location.
           </p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-3xl font-bold text-purple-600 hover:text-purple-700">
+          <Link
+            href="/"
+            className="text-3xl font-bold text-purple-600 hover:text-purple-700"
+          >
             Streamer House
           </Link>
           <p className="text-gray-600 mt-2">Join the creator community</p>
-          
+
           {/* Progress indicator */}
           <div className="flex justify-center mt-6 mb-8">
             <div className="flex items-center space-x-4">
               {[1, 2, 3, 4].map((num) => (
                 <div key={num} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    num <= step 
-                      ? 'bg-purple-600 text-white' 
-                      : 'bg-gray-200 text-gray-600'
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      num <= step
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    }`}
+                  >
                     {num}
                   </div>
                   {num < 4 && (
-                    <div className={`w-12 h-0.5 ${
-                      num < step ? 'bg-purple-600' : 'bg-gray-200'
-                    }`} />
+                    <div
+                      className={`w-12 h-0.5 ${
+                        num < step ? "bg-purple-600" : "bg-gray-200"
+                      }`}
+                    />
                   )}
                 </div>
               ))}
             </div>
           </div>
-          
+
           <p className="text-sm text-gray-500">Step {step} of 4</p>
         </div>
 
@@ -485,7 +584,7 @@ export default function SignupPage() {
         {/* Login link */}
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <Link href="/" className="text-purple-600 hover:underline">
               Sign in
             </Link>
@@ -494,5 +593,5 @@ export default function SignupPage() {
       </div>
       <Toaster />
     </div>
-  )
+  );
 }

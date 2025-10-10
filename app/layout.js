@@ -1,10 +1,11 @@
-import './globals.css'
-import { ThemeProvider } from "next-themes"
+import "./globals.css";
+import { ThemeProvider } from "next-themes";
 
 export const metadata = {
-  title: 'Streamer House - Creator Support & Collab Platform',
-  description: 'Help creators organize into houses, boost each other\'s posts, and find collaborations',
-}
+  title: "Streamer House - Creator Support & Collab Platform",
+  description:
+    "Help creators organize into houses, boost each other's posts, and find collaborations",
+};
 
 export default function RootLayout({ children }) {
   return (
@@ -20,5 +21,5 @@ export default function RootLayout({ children }) {
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

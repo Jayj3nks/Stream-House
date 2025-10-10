@@ -1,19 +1,23 @@
 const nextConfig = {
-  output: 'standalone',
+  output: "standalone",
   reactStrictMode: true,
   images: {
     unoptimized: true,
-    domains: ['api.dicebear.com', 'avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
+    domains: [
+      "api.dicebear.com",
+      "avatars.githubusercontent.com",
+      "lh3.googleusercontent.com",
+    ],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
   },
   experimental: {
     // Remove if not using Server Components
-    serverComponentsExternalPackages: ['mongodb'],
+    serverComponentsExternalPackages: ["mongodb"],
   },
   webpack(config, { dev }) {
     if (dev) {
@@ -21,7 +25,7 @@ const nextConfig = {
       config.watchOptions = {
         poll: 2000, // check every 2 seconds
         aggregateTimeout: 300, // wait before rebuilding
-        ignored: ['**/node_modules'],
+        ignored: ["**/node_modules"],
       };
     }
     return config;

@@ -1,106 +1,125 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useToast } from '@/hooks/use-toast'
-import { Toaster } from '@/components/ui/toaster'
-import { Shield, User, Mail, Key, ArrowLeft, Upload, Camera } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import {
+  Shield,
+  User,
+  Mail,
+  Key,
+  ArrowLeft,
+  Upload,
+  Camera,
+} from "lucide-react";
 
 export default function SettingsPage() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('profile')
-  const { toast } = useToast()
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const { toast } = useToast();
 
   // Profile picture upload
-  const [uploadingPicture, setUploadingPicture] = useState(false)
+  const [uploadingPicture, setUploadingPicture] = useState(false);
 
   // Roommate search opt-in toggle
-  const [appearInRoommateSearch, setAppearInRoommateSearch] = useState(false)
+  const [appearInRoommateSearch, setAppearInRoommateSearch] = useState(false);
 
   // Password change form
   const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    emailCode: ''
-  })
-  const [passwordStep, setPasswordStep] = useState(1) // 1: current password, 2: email verification, 3: new password
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    emailCode: "",
+  });
+  const [passwordStep, setPasswordStep] = useState(1); // 1: current password, 2: email verification, 3: new password
 
   // Username change form
   const [usernameForm, setUsernameForm] = useState({
-    newUsername: '',
-    password: ''
-  })
+    newUsername: "",
+    password: "",
+  });
 
   // Email change form
   const [emailForm, setEmailForm] = useState({
-    newEmail: '',
-    password: '',
-    confirmationCode: ''
-  })
-  const [emailStep, setEmailStep] = useState(1) // 1: new email + password, 2: confirmation code
+    newEmail: "",
+    password: "",
+    confirmationCode: "",
+  });
+  const [emailStep, setEmailStep] = useState(1); // 1: new email + password, 2: confirmation code
 
   useEffect(() => {
     // Handle hash routing
-    const hash = window.location.hash.slice(1)
-    if (['profile', 'account', 'security', 'privacy'].includes(hash)) {
-      setActiveTab(hash)
+    const hash = window.location.hash.slice(1);
+    if (["profile", "account", "security", "privacy"].includes(hash)) {
+      setActiveTab(hash);
     }
 
     // Load actual user data from authentication API
     const loadUserData = async () => {
       try {
-        setLoading(true)
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include'
-        })
-        
+        setLoading(true);
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
         if (response.ok) {
-          const userData = await response.json()
-          console.log('Settings: Loaded user data:', userData)
-          setUser(userData)
-          setUsernameForm({ currentPassword: '', newUsername: userData.displayName })
-          setEmailForm({ currentPassword: '', newEmail: userData.email })
-          setAppearInRoommateSearch(userData.roommateOptIn || false)
+          const userData = await response.json();
+          console.log("Settings: Loaded user data:", userData);
+          setUser(userData);
+          setUsernameForm({
+            currentPassword: "",
+            newUsername: userData.displayName,
+          });
+          setEmailForm({ currentPassword: "", newEmail: userData.email });
+          setAppearInRoommateSearch(userData.roommateOptIn || false);
         } else {
-          console.error('Settings: Failed to load user data, redirecting to login')
-          window.location.href = '/'
+          console.error(
+            "Settings: Failed to load user data, redirecting to login",
+          );
+          window.location.href = "/";
         }
       } catch (error) {
-        console.error('Settings: Error loading user data:', error)
-        window.location.href = '/'
+        console.error("Settings: Error loading user data:", error);
+        window.location.href = "/";
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    
-    loadUserData()
-  }, [])
+    };
+
+    loadUserData();
+  }, []);
 
   // Update URL hash when tab changes
   useEffect(() => {
-    window.location.hash = activeTab
-  }, [activeTab])
+    window.location.hash = activeTab;
+  }, [activeTab]);
 
   const handleProfilePictureUpload = async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
+    const file = event.target.files[0];
+    if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
         description: "Please select an image file.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     // Validate file size (2MB limit)
@@ -108,289 +127,295 @@ export default function SettingsPage() {
       toast({
         title: "File too large",
         description: "Please select an image smaller than 2MB.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
-    setUploadingPicture(true)
+    setUploadingPicture(true);
 
     try {
-      const formData = new FormData()
-      formData.append('avatar', file)
+      const formData = new FormData();
+      formData.append("avatar", file);
 
-      const response = await fetch('/api/upload/avatar', {
-        method: 'POST',
-        credentials: 'include', // Use cookie-based auth instead of bearer token
-        body: formData
-      })
+      const response = await fetch("/api/upload/avatar", {
+        method: "POST",
+        credentials: "include", // Use cookie-based auth instead of bearer token
+        body: formData,
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        setUser(prev => ({ ...prev, avatarUrl: data.avatarUrl }))
+        const data = await response.json();
+        setUser((prev) => ({ ...prev, avatarUrl: data.avatarUrl }));
         toast({
           title: "Profile picture updated",
-          description: "Your new profile picture has been saved."
-        })
+          description: "Your new profile picture has been saved.",
+        });
       } else {
-        const error = await response.json()
+        const error = await response.json();
         toast({
           title: "Upload failed",
           description: error.error || "Failed to upload profile picture.",
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Upload failed",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setUploadingPicture(false)
+      setUploadingPicture(false);
     }
-  }
+  };
 
   const updateRoommateSearchSetting = async (enabled) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch('/api/settings/roommate-search', {
-        method: 'POST',
+      const response = await fetch("/api/settings/roommate-search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ appearInRoommateSearch: enabled })
-      })
+        body: JSON.stringify({ appearInRoommateSearch: enabled }),
+      });
 
       if (response.ok) {
-        setAppearInRoommateSearch(enabled)
-        setUser(prev => ({ ...prev, roommateSearchVisible: enabled }))
+        setAppearInRoommateSearch(enabled);
+        setUser((prev) => ({ ...prev, roommateSearchVisible: enabled }));
         toast({
           title: "Settings updated",
-          description: enabled ? "You'll now appear in roommate search." : "You're now hidden from roommate search."
-        })
+          description: enabled
+            ? "You'll now appear in roommate search."
+            : "You're now hidden from roommate search.",
+        });
       } else {
-        const error = await response.json()
+        const error = await response.json();
         toast({
           title: "Error",
           description: error.error || "Failed to update setting.",
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handlePasswordChange = async (step) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token')
-      let endpoint = ''
-      let body = {}
+      const token = localStorage.getItem("token");
+      let endpoint = "";
+      let body = {};
 
       if (step === 1) {
         // Verify current password and send email code
-        endpoint = '/api/settings/password/verify'
-        body = { currentPassword: passwordForm.currentPassword }
+        endpoint = "/api/settings/password/verify";
+        body = { currentPassword: passwordForm.currentPassword };
       } else if (step === 2) {
         // Verify email code
-        endpoint = '/api/settings/password/verify-code'
-        body = { emailCode: passwordForm.emailCode }
+        endpoint = "/api/settings/password/verify-code";
+        body = { emailCode: passwordForm.emailCode };
       } else if (step === 3) {
         // Change password
-        endpoint = '/api/settings/password/change'
-        body = { 
+        endpoint = "/api/settings/password/change";
+        body = {
           newPassword: passwordForm.newPassword,
-          emailCode: passwordForm.emailCode
-        }
+          emailCode: passwordForm.emailCode,
+        };
       }
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body)
-      })
+        body: JSON.stringify(body),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
         if (step === 1) {
-          setPasswordStep(2)
+          setPasswordStep(2);
           toast({
             title: "Verification code sent",
-            description: "Check your email for the security code."
-          })
+            description: "Check your email for the security code.",
+          });
         } else if (step === 2) {
-          setPasswordStep(3)
+          setPasswordStep(3);
           toast({
             title: "Code verified",
-            description: "Now enter your new password."
-          })
+            description: "Now enter your new password.",
+          });
         } else if (step === 3) {
           setPasswordForm({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: '',
-            emailCode: ''
-          })
-          setPasswordStep(1)
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+            emailCode: "",
+          });
+          setPasswordStep(1);
           toast({
             title: "Password changed successfully",
-            description: "Your password has been updated."
-          })
+            description: "Your password has been updated.",
+          });
         }
       } else {
         toast({
           title: "Error",
           description: data.error,
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleUsernameChange = async () => {
     if (!usernameForm.newUsername.trim() || !usernameForm.password) {
       toast({
         title: "Error",
         description: "Please fill in all fields.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/settings/username', {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/settings/username", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           newUsername: usernameForm.newUsername,
-          password: usernameForm.password
-        })
-      })
+          password: usernameForm.password,
+        }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
-        setUser(prev => ({ ...prev, displayName: data.displayName, username: data.username }))
-        setUsernameForm({ ...usernameForm, password: '' })
+        setUser((prev) => ({
+          ...prev,
+          displayName: data.displayName,
+          username: data.username,
+        }));
+        setUsernameForm({ ...usernameForm, password: "" });
         toast({
           title: "Username updated",
-          description: "Your display name has been changed successfully."
-        })
+          description: "Your display name has been changed successfully.",
+        });
       } else {
         toast({
           title: "Error",
           description: data.error,
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleEmailChange = async (step) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const token = localStorage.getItem('token')
-      let endpoint = ''
-      let body = {}
+      const token = localStorage.getItem("token");
+      let endpoint = "";
+      let body = {};
 
       if (step === 1) {
         // Send confirmation code to new email
-        endpoint = '/api/settings/email/send-code'
+        endpoint = "/api/settings/email/send-code";
         body = {
           newEmail: emailForm.newEmail,
-          password: emailForm.password
-        }
+          password: emailForm.password,
+        };
       } else if (step === 2) {
         // Confirm email change
-        endpoint = '/api/settings/email/confirm'
+        endpoint = "/api/settings/email/confirm";
         body = {
           newEmail: emailForm.newEmail,
-          confirmationCode: emailForm.confirmationCode
-        }
+          confirmationCode: emailForm.confirmationCode,
+        };
       }
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(body)
-      })
+        body: JSON.stringify(body),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok) {
         if (step === 1) {
-          setEmailStep(2)
+          setEmailStep(2);
           toast({
             title: "Confirmation code sent",
-            description: `Check ${emailForm.newEmail} for the confirmation code.`
-          })
+            description: `Check ${emailForm.newEmail} for the confirmation code.`,
+          });
         } else if (step === 2) {
-          setUser(prev => ({ ...prev, email: emailForm.newEmail }))
+          setUser((prev) => ({ ...prev, email: emailForm.newEmail }));
           setEmailForm({
             newEmail: emailForm.newEmail,
-            password: '',
-            confirmationCode: ''
-          })
-          setEmailStep(1)
+            password: "",
+            confirmationCode: "",
+          });
+          setEmailStep(1);
           toast({
             title: "Email updated successfully",
-            description: "Your email address has been changed."
-          })
+            description: "Your email address has been changed.",
+          });
         }
       } else {
         toast({
           title: "Error",
           description: data.error,
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (!user) {
     return (
@@ -400,7 +425,7 @@ export default function SettingsPage() {
           <p>Loading settings...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -409,17 +434,26 @@ export default function SettingsPage() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/'}>
+            <Button
+              variant="ghost"
+              onClick={() => (window.location.href = "/")}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to House
             </Button>
-            <h1 className="text-2xl font-bold text-purple-600">Account Settings</h1>
+            <h1 className="text-2xl font-bold text-purple-600">
+              Account Settings
+            </h1>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
@@ -453,7 +487,9 @@ export default function SettingsPage() {
                       <Button disabled={uploadingPicture} asChild>
                         <span>
                           <Upload className="h-4 w-4 mr-2" />
-                          {uploadingPicture ? "Uploading..." : "Upload New Picture"}
+                          {uploadingPicture
+                            ? "Uploading..."
+                            : "Upload New Picture"}
                         </span>
                       </Button>
                     </Label>
@@ -489,21 +525,37 @@ export default function SettingsPage() {
                   <Input
                     id="newUsername"
                     value={usernameForm.newUsername}
-                    onChange={(e) => setUsernameForm({...usernameForm, newUsername: e.target.value})}
+                    onChange={(e) =>
+                      setUsernameForm({
+                        ...usernameForm,
+                        newUsername: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="usernamePassword">Confirm with Password</Label>
+                  <Label htmlFor="usernamePassword">
+                    Confirm with Password
+                  </Label>
                   <Input
                     id="usernamePassword"
                     type="password"
                     value={usernameForm.password}
-                    onChange={(e) => setUsernameForm({...usernameForm, password: e.target.value})}
+                    onChange={(e) =>
+                      setUsernameForm({
+                        ...usernameForm,
+                        password: e.target.value,
+                      })
+                    }
                   />
                 </div>
-                <Button 
-                  onClick={handleUsernameChange} 
-                  disabled={loading || !usernameForm.newUsername.trim() || !usernameForm.password}
+                <Button
+                  onClick={handleUsernameChange}
+                  disabled={
+                    loading ||
+                    !usernameForm.newUsername.trim() ||
+                    !usernameForm.password
+                  }
                 >
                   {loading ? "Updating..." : "Update Display Name"}
                 </Button>
@@ -541,21 +593,35 @@ export default function SettingsPage() {
                         id="newEmail"
                         type="email"
                         value={emailForm.newEmail}
-                        onChange={(e) => setEmailForm({...emailForm, newEmail: e.target.value})}
+                        onChange={(e) =>
+                          setEmailForm({
+                            ...emailForm,
+                            newEmail: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="emailPassword">Confirm with Password</Label>
+                      <Label htmlFor="emailPassword">
+                        Confirm with Password
+                      </Label>
                       <Input
                         id="emailPassword"
                         type="password"
                         value={emailForm.password}
-                        onChange={(e) => setEmailForm({...emailForm, password: e.target.value})}
+                        onChange={(e) =>
+                          setEmailForm({
+                            ...emailForm,
+                            password: e.target.value,
+                          })
+                        }
                       />
                     </div>
-                    <Button 
-                      onClick={() => handleEmailChange(1)} 
-                      disabled={loading || !emailForm.newEmail || !emailForm.password}
+                    <Button
+                      onClick={() => handleEmailChange(1)}
+                      disabled={
+                        loading || !emailForm.newEmail || !emailForm.password
+                      }
                     >
                       {loading ? "Sending..." : "Send Confirmation Code"}
                     </Button>
@@ -565,17 +631,24 @@ export default function SettingsPage() {
                 {emailStep === 2 && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="confirmationCode">Confirmation Code</Label>
+                      <Label htmlFor="confirmationCode">
+                        Confirmation Code
+                      </Label>
                       <Input
                         id="confirmationCode"
                         value={emailForm.confirmationCode}
-                        onChange={(e) => setEmailForm({...emailForm, confirmationCode: e.target.value})}
+                        onChange={(e) =>
+                          setEmailForm({
+                            ...emailForm,
+                            confirmationCode: e.target.value,
+                          })
+                        }
                         placeholder="Enter code sent to new email"
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button 
-                        onClick={() => handleEmailChange(2)} 
+                      <Button
+                        onClick={() => handleEmailChange(2)}
                         disabled={loading || !emailForm.confirmationCode}
                       >
                         {loading ? "Confirming..." : "Confirm Email Change"}
@@ -611,11 +684,16 @@ export default function SettingsPage() {
                         id="currentPassword"
                         type="password"
                         value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            currentPassword: e.target.value,
+                          })
+                        }
                       />
                     </div>
-                    <Button 
-                      onClick={() => handlePasswordChange(1)} 
+                    <Button
+                      onClick={() => handlePasswordChange(1)}
                       disabled={loading || !passwordForm.currentPassword}
                     >
                       <Key className="h-4 w-4 mr-2" />
@@ -631,18 +709,26 @@ export default function SettingsPage() {
                       <Input
                         id="emailCode"
                         value={passwordForm.emailCode}
-                        onChange={(e) => setPasswordForm({...passwordForm, emailCode: e.target.value})}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            emailCode: e.target.value,
+                          })
+                        }
                         placeholder="Enter code from email"
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button 
-                        onClick={() => handlePasswordChange(2)} 
+                      <Button
+                        onClick={() => handlePasswordChange(2)}
                         disabled={loading || !passwordForm.emailCode}
                       >
                         {loading ? "Verifying..." : "Verify Code"}
                       </Button>
-                      <Button variant="outline" onClick={() => setPasswordStep(1)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setPasswordStep(1)}
+                      >
                         Back
                       </Button>
                     </div>
@@ -657,26 +743,46 @@ export default function SettingsPage() {
                         id="newPassword"
                         type="password"
                         value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            newPassword: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Label htmlFor="confirmPassword">
+                        Confirm New Password
+                      </Label>
                       <Input
                         id="confirmPassword"
                         type="password"
                         value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            confirmPassword: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button 
-                        onClick={() => handlePasswordChange(3)} 
-                        disabled={loading || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
+                      <Button
+                        onClick={() => handlePasswordChange(3)}
+                        disabled={
+                          loading ||
+                          !passwordForm.newPassword ||
+                          passwordForm.newPassword !==
+                            passwordForm.confirmPassword
+                        }
                       >
                         {loading ? "Updating..." : "Update Password"}
                       </Button>
-                      <Button variant="outline" onClick={() => setPasswordStep(2)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setPasswordStep(2)}
+                      >
                         Back
                       </Button>
                     </div>
@@ -692,15 +798,19 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle>Roommate Search</CardTitle>
                 <CardDescription>
-                  Control whether you appear in the roommate finder for other creators to discover
+                  Control whether you appear in the roommate finder for other
+                  creators to discover
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="roommate-search">Appear in roommate search</Label>
+                    <Label htmlFor="roommate-search">
+                      Appear in roommate search
+                    </Label>
                     <p className="text-sm text-muted-foreground">
-                      When enabled, other creators can find and invite you to their house
+                      When enabled, other creators can find and invite you to
+                      their house
                     </p>
                   </div>
                   <Switch
@@ -717,5 +827,5 @@ export default function SettingsPage() {
       </div>
       <Toaster />
     </div>
-  )
+  );
 }

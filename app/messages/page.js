@@ -1,133 +1,143 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ArrowLeft, Send, Search, MessageCircle } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowLeft, Send, Search, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function MessagesPage() {
-  const [user, setUser] = useState(null)
-  const [conversations, setConversations] = useState([])
-  const [selectedConversation, setSelectedConversation] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState('')
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [user, setUser] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Set mock user data
     setUser({
-      id: 'user-123',
-      displayName: 'Creator User',
-      email: 'user@example.com'
-    })
+      id: "user-123",
+      displayName: "Creator User",
+      email: "user@example.com",
+    });
 
     // Set mock conversations
     setConversations([
       {
-        id: 'conv-1',
+        id: "conv-1",
         user: {
-          id: 'user-1',
-          displayName: 'Gaming Creator',
-          username: 'gamingcreator',
-          platforms: ['Twitch', 'YouTube']
+          id: "user-1",
+          displayName: "Gaming Creator",
+          username: "gamingcreator",
+          platforms: ["Twitch", "YouTube"],
         },
-        lastMessage: 'Hey! Interested in that collab we discussed?',
-        timestamp: '2 min ago',
-        unread: true
+        lastMessage: "Hey! Interested in that collab we discussed?",
+        timestamp: "2 min ago",
+        unread: true,
       },
       {
-        id: 'conv-2',
+        id: "conv-2",
         user: {
-          id: 'user-2',
-          displayName: 'Beauty Influencer',
-          username: 'beautyinfluencer',
-          platforms: ['TikTok', 'Instagram']
+          id: "user-2",
+          displayName: "Beauty Influencer",
+          username: "beautyinfluencer",
+          platforms: ["TikTok", "Instagram"],
         },
-        lastMessage: 'Thanks for the engagement on my latest post!',
-        timestamp: '1 hour ago',
-        unread: false
+        lastMessage: "Thanks for the engagement on my latest post!",
+        timestamp: "1 hour ago",
+        unread: false,
       },
       {
-        id: 'conv-3',
+        id: "conv-3",
         user: {
-          id: 'user-3',
-          displayName: 'Tech Reviewer',
-          username: 'techreviewer',
-          platforms: ['YouTube']
+          id: "user-3",
+          displayName: "Tech Reviewer",
+          username: "techreviewer",
+          platforms: ["YouTube"],
         },
-        lastMessage: 'When are you free for that tech review collab?',
-        timestamp: 'Yesterday',
-        unread: false
-      }
-    ])
-    
-    setLoading(false)
-  }, [])
+        lastMessage: "When are you free for that tech review collab?",
+        timestamp: "Yesterday",
+        unread: false,
+      },
+    ]);
+
+    setLoading(false);
+  }, []);
 
   const handleSelectConversation = (conversation) => {
-    setSelectedConversation(conversation)
-    
+    setSelectedConversation(conversation);
+
     // Load mock messages for selected conversation
     const mockMessages = [
       {
         id: 1,
         senderId: conversation.user.id,
         senderName: conversation.user.displayName,
-        message: 'Hey there! I saw your content and really love your style.',
-        timestamp: '10:30 AM',
-        isOwn: false
+        message: "Hey there! I saw your content and really love your style.",
+        timestamp: "10:30 AM",
+        isOwn: false,
       },
       {
         id: 2,
-        senderId: 'user-123',
-        senderName: 'Creator User',
-        message: 'Thank you so much! I really appreciate that. Your gaming content is amazing too!',
-        timestamp: '10:45 AM',
-        isOwn: true
+        senderId: "user-123",
+        senderName: "Creator User",
+        message:
+          "Thank you so much! I really appreciate that. Your gaming content is amazing too!",
+        timestamp: "10:45 AM",
+        isOwn: true,
       },
       {
         id: 3,
         senderId: conversation.user.id,
         senderName: conversation.user.displayName,
         message: conversation.lastMessage,
-        timestamp: '11:15 AM',
-        isOwn: false
-      }
-    ]
-    
-    setMessages(mockMessages)
-  }
+        timestamp: "11:15 AM",
+        isOwn: false,
+      },
+    ];
+
+    setMessages(mockMessages);
+  };
 
   const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !selectedConversation) return
-    
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedConversation) return;
+
     const message = {
       id: messages.length + 1,
-      senderId: 'user-123',
-      senderName: 'Creator User',
+      senderId: "user-123",
+      senderName: "Creator User",
       message: newMessage,
-      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      isOwn: true
-    }
-    
-    setMessages([...messages, message])
-    setNewMessage('')
-  }
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      isOwn: true,
+    };
+
+    setMessages([...messages, message]);
+    setNewMessage("");
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -137,7 +147,7 @@ export default function MessagesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link 
+              <Link
                 href="/dashboard"
                 className="inline-flex items-center text-purple-600 hover:text-purple-700 mr-6"
               >
@@ -146,8 +156,11 @@ export default function MessagesPage() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
             </div>
-            
-            <Link href="/dashboard" className="text-2xl font-bold text-purple-600">
+
+            <Link
+              href="/dashboard"
+              className="text-2xl font-bold text-purple-600"
+            >
               Streamer House
             </Link>
           </div>
@@ -166,8 +179,8 @@ export default function MessagesPage() {
               </CardTitle>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input 
-                  placeholder="Search conversations..." 
+                <Input
+                  placeholder="Search conversations..."
                   className="pl-10"
                 />
               </div>
@@ -180,7 +193,9 @@ export default function MessagesPage() {
                       key={conversation.id}
                       onClick={() => handleSelectConversation(conversation)}
                       className={`p-4 cursor-pointer hover:bg-gray-50 border-b transition-colors ${
-                        selectedConversation?.id === conversation.id ? 'bg-purple-50 border-purple-200' : ''
+                        selectedConversation?.id === conversation.id
+                          ? "bg-purple-50 border-purple-200"
+                          : ""
                       }`}
                     >
                       <div className="flex items-start space-x-3">
@@ -200,14 +215,22 @@ export default function MessagesPage() {
                           </div>
                           <div className="flex flex-wrap gap-1 mb-1">
                             {conversation.user.platforms.map((platform) => (
-                              <Badge key={platform} variant="outline" className="text-xs">
+                              <Badge
+                                key={platform}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {platform}
                               </Badge>
                             ))}
                           </div>
-                          <p className={`text-sm truncate ${
-                            conversation.unread ? 'font-medium text-gray-900' : 'text-gray-600'
-                          }`}>
+                          <p
+                            className={`text-sm truncate ${
+                              conversation.unread
+                                ? "font-medium text-gray-900"
+                                : "text-gray-600"
+                            }`}
+                          >
                             {conversation.lastMessage}
                           </p>
                         </div>
@@ -235,10 +258,16 @@ export default function MessagesPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <CardTitle>{selectedConversation.user.displayName}</CardTitle>
+                      <CardTitle>
+                        {selectedConversation.user.displayName}
+                      </CardTitle>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {selectedConversation.user.platforms.map((platform) => (
-                          <Badge key={platform} variant="outline" className="text-xs">
+                          <Badge
+                            key={platform}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {platform}
                           </Badge>
                         ))}
@@ -252,17 +281,19 @@ export default function MessagesPage() {
                   <ScrollArea className="flex-1 px-4 pb-4">
                     <div className="space-y-4">
                       {messages.map((message) => (
-                        <div 
-                          key={message.id} 
+                        <div
+                          key={message.id}
                           className={`flex flex-col space-y-1 ${
-                            message.isOwn ? 'items-end' : 'items-start'
+                            message.isOwn ? "items-end" : "items-start"
                           }`}
                         >
-                          <div className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                            message.isOwn 
-                              ? 'bg-purple-600 text-white' 
-                              : 'bg-gray-100 text-gray-900'
-                          }`}>
+                          <div
+                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                              message.isOwn
+                                ? "bg-purple-600 text-white"
+                                : "bg-gray-100 text-gray-900"
+                            }`}
+                          >
                             {!message.isOwn && (
                               <div className="font-semibold text-xs mb-1 text-purple-600">
                                 {message.senderName}
@@ -277,10 +308,13 @@ export default function MessagesPage() {
                       ))}
                     </div>
                   </ScrollArea>
-                  
+
                   {/* Message Input */}
                   <div className="border-t p-4">
-                    <form onSubmit={handleSendMessage} className="flex space-x-3">
+                    <form
+                      onSubmit={handleSendMessage}
+                      className="flex space-x-3"
+                    >
                       <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
@@ -311,5 +345,5 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

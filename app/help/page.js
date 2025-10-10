@@ -1,41 +1,61 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
-import { Toaster } from '@/components/ui/toaster'
-import { ArrowLeft, MessageSquare, Bug, Lightbulb, AlertTriangle, Upload } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import {
+  ArrowLeft,
+  MessageSquare,
+  Bug,
+  Lightbulb,
+  AlertTriangle,
+  Upload,
+} from "lucide-react";
 
 export default function HelpPage() {
-  const [loading, setLoading] = useState(false)
-  const [uploadingScreenshot, setUploadingScreenshot] = useState(false)
-  const { toast } = useToast()
+  const [loading, setLoading] = useState(false);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    type: '',
-    title: '',
-    description: '',
-    email: '',
-    screenshotUrl: ''
-  })
+    type: "",
+    title: "",
+    description: "",
+    email: "",
+    screenshotUrl: "",
+  });
 
   const handleScreenshotUpload = async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
+    const file = event.target.files[0];
+    if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
         description: "Please select an image file.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     // Validate file size (10MB limit)
@@ -43,134 +63,134 @@ export default function HelpPage() {
       toast({
         title: "File too large",
         description: "Please select an image smaller than 10MB.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
-    setUploadingScreenshot(true)
+    setUploadingScreenshot(true);
 
     try {
-      const formDataUpload = new FormData()
-      formDataUpload.append('screenshot', file)
+      const formDataUpload = new FormData();
+      formDataUpload.append("screenshot", file);
 
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
+      const response = await fetch("/api/media/upload", {
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: formDataUpload
-      })
+        body: formDataUpload,
+      });
 
       if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({ ...prev, screenshotUrl: data.url }))
+        const data = await response.json();
+        setFormData((prev) => ({ ...prev, screenshotUrl: data.url }));
         toast({
           title: "Screenshot uploaded",
-          description: "Screenshot has been attached to your report."
-        })
+          description: "Screenshot has been attached to your report.",
+        });
       } else {
-        const error = await response.json()
+        const error = await response.json();
         toast({
           title: "Upload failed",
           description: error.error || "Failed to upload screenshot.",
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Upload failed",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setUploadingScreenshot(false)
+      setUploadingScreenshot(false);
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!formData.type || !formData.title || !formData.description) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields.",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/bug-reports', {
-        method: 'POST',
+      const response = await fetch("/api/bug-reports", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData)
-      })
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         toast({
           title: "Report submitted",
-          description: `Thank you! Your report has been submitted with ID: ${data.ticketId}`
-        })
-        
+          description: `Thank you! Your report has been submitted with ID: ${data.ticketId}`,
+        });
+
         // Reset form
         setFormData({
-          type: '',
-          title: '',
-          description: '',
-          email: '',
-          screenshotUrl: ''
-        })
+          type: "",
+          title: "",
+          description: "",
+          email: "",
+          screenshotUrl: "",
+        });
       } else {
-        const error = await response.json()
+        const error = await response.json();
         toast({
           title: "Submission failed",
           description: error.error || "Failed to submit report.",
-          variant: "destructive"
-        })
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
         title: "Submission failed",
         description: "Something went wrong. Please try again.",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'bug':
-        return <Bug className="h-4 w-4" />
-      case 'feature':
-        return <Lightbulb className="h-4 w-4" />
-      case 'abuse':
-        return <AlertTriangle className="h-4 w-4" />
+      case "bug":
+        return <Bug className="h-4 w-4" />;
+      case "feature":
+        return <Lightbulb className="h-4 w-4" />;
+      case "abuse":
+        return <AlertTriangle className="h-4 w-4" />;
       default:
-        return <MessageSquare className="h-4 w-4" />
+        return <MessageSquare className="h-4 w-4" />;
     }
-  }
+  };
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'bug':
-        return 'text-red-600'
-      case 'feature':
-        return 'text-blue-600'
-      case 'abuse':
-        return 'text-orange-600'
+      case "bug":
+        return "text-red-600";
+      case "feature":
+        return "text-blue-600";
+      case "abuse":
+        return "text-orange-600";
       default:
-        return 'text-gray-600'
+        return "text-gray-600";
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,11 +198,16 @@ export default function HelpPage() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/'}>
+            <Button
+              variant="ghost"
+              onClick={() => (window.location.href = "/")}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to House
             </Button>
-            <h1 className="text-2xl font-bold text-purple-600">Help & Support</h1>
+            <h1 className="text-2xl font-bold text-purple-600">
+              Help & Support
+            </h1>
           </div>
         </div>
       </header>
@@ -195,7 +220,8 @@ export default function HelpPage() {
               <span>Submit Report</span>
             </CardTitle>
             <CardDescription>
-              Report bugs, request features, or report abuse. We'll get back to you soon!
+              Report bugs, request features, or report abuse. We'll get back to
+              you soon!
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -203,9 +229,11 @@ export default function HelpPage() {
               {/* Report Type */}
               <div className="space-y-2">
                 <Label htmlFor="type">Report Type *</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, type: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select report type" />
@@ -245,7 +273,9 @@ export default function HelpPage() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
+                  }
                   placeholder="Brief description of the issue or request"
                   required
                 />
@@ -257,7 +287,12 @@ export default function HelpPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Provide detailed information about the issue, steps to reproduce, or feature request details"
                   rows={5}
                   required
@@ -271,7 +306,9 @@ export default function HelpPage() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, email: e.target.value }))
+                  }
                   placeholder="Leave blank to use your account email"
                 />
               </div>
@@ -281,10 +318,16 @@ export default function HelpPage() {
                 <Label htmlFor="screenshot">Screenshot (optional)</Label>
                 <div className="flex items-center space-x-4">
                   <Label htmlFor="screenshot-upload" className="cursor-pointer">
-                    <Button variant="outline" disabled={uploadingScreenshot} asChild>
+                    <Button
+                      variant="outline"
+                      disabled={uploadingScreenshot}
+                      asChild
+                    >
                       <span>
                         <Upload className="h-4 w-4 mr-2" />
-                        {uploadingScreenshot ? "Uploading..." : "Upload Screenshot"}
+                        {uploadingScreenshot
+                          ? "Uploading..."
+                          : "Upload Screenshot"}
                       </span>
                     </Button>
                   </Label>
@@ -296,18 +339,26 @@ export default function HelpPage() {
                     className="hidden"
                   />
                   {formData.screenshotUrl && (
-                    <span className="text-sm text-green-600">✓ Screenshot attached</span>
+                    <span className="text-sm text-green-600">
+                      ✓ Screenshot attached
+                    </span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  PNG, JPG, GIF up to 10MB. Screenshots help us understand the issue better.
+                  PNG, JPG, GIF up to 10MB. Screenshots help us understand the
+                  issue better.
                 </p>
               </div>
 
               {/* Submit Button */}
-              <Button 
-                type="submit" 
-                disabled={loading || !formData.type || !formData.title || !formData.description}
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  !formData.type ||
+                  !formData.title ||
+                  !formData.description
+                }
                 className="w-full"
               >
                 {loading ? "Submitting..." : "Submit Report"}
@@ -330,7 +381,7 @@ export default function HelpPage() {
                   Something not working? Let us know!
                 </p>
               </div>
-              
+
               <div className="text-center p-4 border rounded-lg">
                 <Lightbulb className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <h3 className="font-medium mb-1">Feature Requests</h3>
@@ -338,7 +389,7 @@ export default function HelpPage() {
                   Have an idea? We'd love to hear it!
                 </p>
               </div>
-              
+
               <div className="text-center p-4 border rounded-lg">
                 <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-orange-600" />
                 <h3 className="font-medium mb-1">Report Abuse</h3>
@@ -362,5 +413,5 @@ export default function HelpPage() {
       </div>
       <Toaster />
     </div>
-  )
+  );
 }
